@@ -14,7 +14,7 @@ COPY packages/polyjuice/package*.json ./packages/polyjuice/
 COPY packages/runner/package*.json ./packages/runner/
 RUN yarn install
 
-COPY . ./
+COPY --chown=node . ./
 
 EXPOSE 6100
 EXPOSE 6100
