@@ -1,0 +1,14 @@
+# Packages
+node_modules/
+
+# Hardhat build outputs
+artifacts/
+cache/
+lib/
+
+.env
+upgrades*.json
+downgrades*.json
+multi-sign-wallet*.json
+
+.openzeppelin

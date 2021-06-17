@@ -14,8 +14,11 @@
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
     "@godwoken-examples/godwoken": "^0.0.1",
+    "axios": "^0.21.1",
     "ckb-js-toolkit": "^0.10.2",
+    "dotenv": "^10.0.0",
     "ethereumjs-util": "^7.0.10",
+    "ethers": "^5.3.1",
     "keccak256": "^1.0.2"
   }
 }
