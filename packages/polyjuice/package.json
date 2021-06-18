@@ -4,7 +4,7 @@
   "description": "Client library to interactive with godwoken polyjuice",
   "main": "lib/index.js",
   "repository": "https://github.com/nervosnetwork/godwoken-examples",
-  "author": "Linfeng Qian <thewawar@gmail.com>",
+  "author": "Linfeng Qian <thewawar@gmail.com>, honestgoing, Flouse",
   "license": "MIT",
   "private": true,
   "scripts": {
