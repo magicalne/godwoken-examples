@@ -110,7 +110,7 @@ async function main() {
     await initGwAccountIfNeeded(deployerAddress);
 
     const transactionSubmitter = await TransactionSubmitter.newWithHistory(
-        `multi-sign-wallet${networkSuffix ? `-${networkSuffix}` : ""}.json`,
+        `cache/multi-sign-wallet${networkSuffix ? `-${networkSuffix}` : ""}.json`,
     );
 
     let receipt = await transactionSubmitter.submitAndWait(
