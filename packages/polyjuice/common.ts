@@ -39,7 +39,7 @@ export const polyjuiceRPC = new PolyjuiceJsonRpcProvider(
   WalletSimple.abi as AbiItems,
   process.env.WEB3_RPC,
 );
-const polyjuice_config: PolyjuiceConfig = {
+export const polyjuice_config: PolyjuiceConfig = {
   godwokerOption: godwokerOption,
   web3RpcUrl: process.env.WEB3_RPC!,
   abiItems: WalletSimple.abi as AbiItems,

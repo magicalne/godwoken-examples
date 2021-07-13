@@ -14,10 +14,11 @@ import {
 import { TransactionSubmitter } from "../TransactionSubmitter";
 import {
   web3Rpc,
-  deployer,
   networkSuffix,
   initGwAccountIfNeeded,
   isGodwoken,
+  polyjuice_config,
+  polyjuiceRPC,
 } from "../common";
 
 import WalletSimple from "../contracts/WalletSimple.sol/WalletSimple.json";
@@ -95,7 +96,6 @@ interface IMintableToken extends Contract, IMintableTokenStaticMethods {
   };
 }
 
-const deployerAddress = deployer.address;
 
 const { SIGNER_PRIVATE_KEYS } = process.env;
 if (SIGNER_PRIVATE_KEYS == null) {
@@ -124,7 +124,8 @@ const txOverride = {
   gasLimit: isGodwoken ? 1_000_000 : undefined,
 };
 
-async function main() {
+async function testMultiSignWallet(deployer: PolyjuiceWallet) {
+  const deployerAddress = deployer.address;
   console.log("Deployer address", deployerAddress);
   await initGwAccountIfNeeded(deployerAddress);
 
@@ -142,7 +143,7 @@ async function main() {
       );
       const tx = implementationFactory.getDeployTransaction();
       tx.gasPrice = txOverride.gasPrice;
-      tx.gasLimit = txOverride.gasLimit;      
+      tx.gasLimit = txOverride.gasLimit;
       return deployer.sendTransaction(tx);
     },
   );
@@ -320,11 +321,12 @@ export async function generateSignedTx(
   };
 }
 
-main()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.log("err", err);
-    process.exit(1);
-  });
+
+[
+  "1473ec0e7c507de1d5c734a997848a78ee4d30846986d6b1d22002a57ece74ba",
+  "f5e9bac200a2eca0b0eead8a327ef3dc148ba10e192d07badad2d195f2488b94",
+  "a443ed1e456f0f23bcdf4f302f599cf77530d594ad896e84b549a04b0ea40c10"
+].forEach(privKey => {
+  testMultiSignWallet(new PolyjuiceWallet(privKey, polyjuice_config, polyjuiceRPC))
+    .catch(console.error);
+});
