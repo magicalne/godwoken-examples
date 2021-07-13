@@ -9,7 +9,8 @@
   "private": true,
   "scripts": {
     "fmt": "prettier --write \"src/**/*.ts\" package.json",
-    "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\""
+    "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
+    "test:multi-sign-wallet": "yarn ts-node scripts/multi-sign-wallet.ts"
   },
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
@@ -18,7 +19,8 @@
     "ckb-js-toolkit": "^0.10.2",
     "dotenv": "^10.0.0",
     "ethereumjs-util": "^7.0.10",
-    "ethers": "^5.3.1",
-    "keccak256": "^1.0.2"
+    "ethers": "^5.4.0",
+    "keccak256": "^1.0.2",
+    "@polyjuice-provider/ethers": "0.0.1-rc4"
   }
 }

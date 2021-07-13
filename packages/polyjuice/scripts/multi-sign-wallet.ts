@@ -1,333 +1,330 @@
 import {
-    ContractFactory,
-    Contract,
-    BigNumberish,
-    providers,
-    Overrides,
-    CallOverrides,
-    Wallet,
-    BigNumber,
-    utils as ethersUtils,
-    Signer,
-    PopulatedTransaction,
+  ContractFactory,
+  Contract,
+  BigNumberish,
+  providers,
+  Overrides,
+  CallOverrides,
+  BigNumber,
+  utils as ethersUtils,
+  Signer,
+  PopulatedTransaction,
 } from "ethers";
 
 import { TransactionSubmitter } from "../TransactionSubmitter";
 import {
-    rpc,
-    deployer,
-    networkSuffix,
-    initGwAccountIfNeeded,
-    isGodwokenDevnet,
+  web3Rpc,
+  deployer,
+  networkSuffix,
+  initGwAccountIfNeeded,
+  isGodwoken,
 } from "../common";
 
 import WalletSimple from "../contracts/WalletSimple.sol/WalletSimple.json";
 import MintableToken from "../contracts/MintableToken.sol/MintableToken.json";
-import PolyjuiceAddress from "../contracts/PolyjuiceAddress.sol/PolyjuiceAddress.json";
+
+import { PolyjuiceWallet, PolyjuiceConfig } from "@polyjuice-provider/ethers";
+import { AbiItems } from "@polyjuice-provider/base/lib/abi";
+import dotenv from "dotenv";
+dotenv.config();
+
+const PolyjuiceWalletConfig: PolyjuiceConfig = {
+  godwokerOption: {
+    godwoken: {
+      rollup_type_hash: process.env.ROLLUP_TYPE_HASH!,
+      eth_account_lock: {
+        code_hash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH!,
+        hash_type: "type",
+      },
+    },
+  },
+  web3RpcUrl: process.env.WEB3_RPC!,
+  abiItems: WalletSimple.abi as AbiItems,
+};
 
 type TCallStatic = Contract["callStatic"];
 type TransactionResponse = providers.TransactionResponse;
 
 interface IWalletSimpleStaticMethods extends TCallStatic {
-    getNextSequenceId(overrides?: CallOverrides): Promise<BigNumber>;
+  getNextSequenceId(overrides?: CallOverrides): Promise<BigNumber>;
 }
 
 interface IWalletSimple extends Contract, IWalletSimpleStaticMethods {
-    callStatic: IWalletSimpleStaticMethods;
-    init(
-        signers: [string, string, string],
-        overrides?: Overrides,
-    ): Promise<TransactionResponse>;
-    sendMultiSig(
-        toAddress: string,
-        value: BigNumberish,
-        data: string,
-        expireTime: number,
-        sequenceId: string,
-        signature: string,
-        overrides?: Overrides,
-    ): Promise<TransactionResponse>;
+  callStatic: IWalletSimpleStaticMethods;
+  init(
+    signers: [string, string, string],
+    code_hash: string,
+    overrides?: Overrides,
+  ): Promise<TransactionResponse>;
+  sendMultiSig(
+    toAddress: string,
+    value: BigNumberish,
+    data: string,
+    expireTime: number,
+    sequenceId: string,
+    signature: string,
+    overrides?: Overrides,
+  ): Promise<TransactionResponse>;
 }
 
 interface IPolyjuiceAddressStaticMethods extends TCallStatic {
-    getPolyjuiceAddress(overrides?: CallOverrides): Promise<string>;
+  getPolyjuiceAddress(overrides?: CallOverrides): Promise<string>;
 }
 
 interface IPolyjuiceAddress extends Contract, IPolyjuiceAddressStaticMethods {
-    callStatic: IPolyjuiceAddressStaticMethods;
+  callStatic: IPolyjuiceAddressStaticMethods;
 }
 
 interface IMintableTokenStaticMethods extends TCallStatic {
-    balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
+  balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 }
 
 interface IMintableToken extends Contract, IMintableTokenStaticMethods {
-    callStatic: IMintableTokenStaticMethods;
-    setMinter(
-        minter: string,
-        overrides?: Overrides,
-    ): Promise<TransactionResponse>;
-    mint(
-        account: string,
-        amount: BigNumberish,
-        overrides?: Overrides,
-    ): Promise<TransactionResponse>;
-    populateTransaction: {
-        mint(account: string, amount: BigNumberish): Promise<PopulatedTransaction>;
-    };
+  callStatic: IMintableTokenStaticMethods;
+  setMinter(
+    minter: string,
+    overrides?: Overrides,
+  ): Promise<TransactionResponse>;
+  mint(
+    account: string,
+    amount: BigNumberish,
+    overrides?: Overrides,
+  ): Promise<TransactionResponse>;
+  populateTransaction: {
+    mint(account: string, amount: BigNumberish): Promise<PopulatedTransaction>;
+  };
 }
 
 const deployerAddress = deployer.address;
 
 const { SIGNER_PRIVATE_KEYS } = process.env;
 if (SIGNER_PRIVATE_KEYS == null) {
-    console.log("process.env.SIGNER_PRIVATE_KEYS is required");
-    process.exit(1);
+  console.log("process.env.SIGNER_PRIVATE_KEYS is required");
+  process.exit(1);
 }
 const signerPrivateKeys = SIGNER_PRIVATE_KEYS.split(",") as [string, string];
 if (signerPrivateKeys.length !== 2) {
-    console.log(
-        "Invalid number of signers, required: 2, got:",
-        signerPrivateKeys.length,
-    );
-    process.exit(1);
+  console.log(
+    "Invalid number of signers, required: 2, got:",
+    signerPrivateKeys.length,
+  );
+  process.exit(1);
 }
 
 const [signerOne, signerTwo] = signerPrivateKeys.map(
-    (signerPrivateKey) => new Wallet(signerPrivateKey, rpc),
+  (signerPrivateKey) =>
+    new PolyjuiceWallet(signerPrivateKey, PolyjuiceWalletConfig, web3Rpc),
 );
 const [signerOneAddress, signerTwoAddress] = [signerOne, signerTwo].map(
-    (wallet) => wallet.address,
+  (wallet) => wallet.address,
 );
 
 const txOverride = {
-    gasPrice: isGodwokenDevnet ? 0 : undefined,
-    gasLimit: isGodwokenDevnet ? 1_000_000 : undefined,
+  gasPrice: isGodwoken ? 0 : undefined,
+  gasLimit: isGodwoken ? 1_000_000 : undefined,
 };
 
 async function main() {
-    console.log("Deployer address", deployerAddress);
-    await initGwAccountIfNeeded(deployerAddress);
+  console.log("Deployer address", deployerAddress);
+  await initGwAccountIfNeeded(deployerAddress);
 
-    const transactionSubmitter = await TransactionSubmitter.newWithHistory(
-        `cache/multi-sign-wallet${networkSuffix ? `-${networkSuffix}` : ""}.json`,
+  const transactionSubmitter = await TransactionSubmitter.newWithHistory(
+    `cache/multi-sign-wallet${networkSuffix ? `-${networkSuffix}-${deployerAddress}` : ""}.json`,
+  );
+
+  let receipt = await transactionSubmitter.submitAndWait(
+    `Deploy WalletSimple`,
+    () => {
+      const implementationFactory = new ContractFactory(
+        WalletSimple.abi,
+        WalletSimple.bytecode,
+        deployer,
+      );
+      const tx = implementationFactory.getDeployTransaction();
+      tx.gasPrice = txOverride.gasPrice;
+      tx.gasLimit = txOverride.gasLimit;      
+      return deployer.sendTransaction(tx);
+    },
+  );
+  const walletSimpleAddress = receipt.contractAddress;
+  console.log(`    WalletSimple address:`, walletSimpleAddress);
+
+  const walletSimple = new Contract(
+    walletSimpleAddress,
+    WalletSimple.abi,
+    deployer,
+  ) as IWalletSimple;
+
+  const signerAddresses: [string, string, string] = [
+    signerOneAddress,
+    signerTwoAddress,
+    deployerAddress,
+  ];
+  console.log("Signer addresses:", signerAddresses.join(", "));
+
+  await transactionSubmitter.submitAndWait(`Init WalletSimple`, () => {
+    return walletSimple.init(
+      signerAddresses,
+      process.env.ETH_ACCOUNT_LOCK_CODE_HASH!,
+      txOverride,
     );
+  });
 
-    let receipt = await transactionSubmitter.submitAndWait(
-        `Deploy WalletSimple`,
-        () => {
-            const implementationFactory = new ContractFactory(
-                WalletSimple.abi,
-                WalletSimple.bytecode,
-                deployer,
-            );
-            const tx = implementationFactory.getDeployTransaction();
-            tx.gasPrice = txOverride.gasPrice;
-            tx.gasLimit = txOverride.gasLimit;
-            return deployer.sendTransaction(tx);
-        },
-    );
-    const walletSimpleAddress = receipt.contractAddress;
-    console.log(`    WalletSimple address:`, walletSimpleAddress);
+  receipt = await transactionSubmitter.submitAndWait(
+    `Deploy MintableToken`,
+    () => {
+      const implementationFactory = new ContractFactory(
+        MintableToken.abi,
+        MintableToken.bytecode,
+        deployer,
+      );
+      const tx = implementationFactory.getDeployTransaction();
+      tx.gasPrice = txOverride.gasPrice;
+      tx.gasLimit = txOverride.gasLimit;
+      return deployer.sendTransaction(tx);
+    },
+  );
+  const mintableTokenAddress = receipt.contractAddress;
+  console.log(`    MintableToken address:`, mintableTokenAddress);
 
-    const walletSimple = new Contract(
+  const mintableToken = new Contract(
+    mintableTokenAddress,
+    MintableToken.abi,
+    deployer,
+  ) as IMintableToken;
+
+  await transactionSubmitter.submitAndWait(`Set WalletSimple as minter`, () => {
+    return mintableToken.setMinter(walletSimpleAddress, txOverride);
+  });
+
+  console.log(
+    "Balance before mint:",
+    (await mintableToken.balanceOf(deployerAddress)).toString(),
+  );
+
+  await initGwAccountIfNeeded(signerTwoAddress);
+  await transactionSubmitter.submitAndWait(
+    `Mint 1006 using WalletSimple`,
+    async () => {
+      const walletSimpleForSignerTwo = new Contract(
         walletSimpleAddress,
         WalletSimple.abi,
-        deployer,
-    ) as IWalletSimple;
+        signerTwo,
+      ) as IWalletSimple;
 
-    const signerAddresses: [string, string, string] = [
-        signerOneAddress,
-        signerTwoAddress,
+      const baseTx = await mintableToken.populateTransaction.mint(
         deployerAddress,
-    ];
-    if (isGodwokenDevnet) {
-        console.log(
-            "[Incompatibility] using Polyjuice Address for executor(signer two)",
-        );
-        await initGwAccountIfNeeded(signerTwoAddress);
+        "1006",
+      );
 
-        receipt = await transactionSubmitter.submitAndWait(
-            `Deploy PolyjuiceAddress`,
-            () => {
-                const implementationFactory = new ContractFactory(
-                    PolyjuiceAddress.abi,
-                    PolyjuiceAddress.bytecode,
-                    deployer,
-                );
-                const tx = implementationFactory.getDeployTransaction();
-                tx.gasPrice = txOverride.gasPrice;
-                tx.gasLimit = txOverride.gasLimit;
-                return deployer.sendTransaction(tx);
-            },
-        );
-        const polyjuiceAddressAddress = receipt.contractAddress;
-        console.log("    PolyjuiceAddress address:", polyjuiceAddressAddress);
+      const sequenceId = await walletSimple.getNextSequenceId();
 
-        const polyjuiceAddress = new Contract(
-            polyjuiceAddressAddress,
-            PolyjuiceAddress.abi,
-            rpc,
-        ) as IPolyjuiceAddress;
-        const polyjuiceAddressOfSignerTwo =
-            await polyjuiceAddress.getPolyjuiceAddress({
-                from: signerTwoAddress,
-            });
-        console.log(
-            "    Executor(signer two) Polyjuice Address:",
-            polyjuiceAddressOfSignerTwo,
-        );
-        signerAddresses[1] = polyjuiceAddressOfSignerTwo;
-    }
+      console.log(`    Signing tx using signer one(${signerOneAddress})`);
+      const signedTx = await generateSignedTx(
+        sequenceId,
+        baseTx,
+        60,
+        signerOne,
+      );
 
-    console.log("Signer addresses:", signerAddresses.join(", "));
+      console.log(`    Executing tx using signer two(${signerTwoAddress})`);
+      return walletSimpleForSignerTwo.sendMultiSig(
+        signedTx.toAddress,
+        signedTx.value.toString(),
+        signedTx.data,
+        signedTx.expireTime,
+        signedTx.sequenceId,
+        signedTx.signature,
+        txOverride,
+      );
+    }, false,
+  );
 
-    await transactionSubmitter.submitAndWait(`Init WalletSimple`, () => {
-        return walletSimple.init(signerAddresses, txOverride);
-    });
-
-    receipt = await transactionSubmitter.submitAndWait(
-        `Deploy MintableToken`,
-        () => {
-            const implementationFactory = new ContractFactory(
-                MintableToken.abi,
-                MintableToken.bytecode,
-                deployer,
-            );
-            const tx = implementationFactory.getDeployTransaction();
-            tx.gasPrice = txOverride.gasPrice;
-            tx.gasLimit = txOverride.gasLimit;
-            return deployer.sendTransaction(tx);
-        },
-    );
-    const mintableTokenAddress = receipt.contractAddress;
-    console.log(`    MintableToken address:`, mintableTokenAddress);
-
-    const mintableToken = new Contract(
-        mintableTokenAddress,
-        MintableToken.abi,
-        deployer,
-    ) as IMintableToken;
-
-    await transactionSubmitter.submitAndWait(`Set WalletSimple as minter`, () => {
-        return mintableToken.setMinter(walletSimpleAddress, txOverride);
-    });
-
-    console.log(
-        "Balance before mint:",
-        (await mintableToken.balanceOf(deployerAddress)).toString(),
-    );
-
-    await transactionSubmitter.submitAndWait(
-        `Mint 100 using WalletSimple`,
-        async () => {
-            const walletSimpleForSignerTwo = new Contract(
-                walletSimpleAddress,
-                WalletSimple.abi,
-                signerTwo,
-            ) as IWalletSimple;
-
-            const baseTx = await mintableToken.populateTransaction.mint(
-                deployerAddress,
-                "100",
-            );
-
-            const sequenceId = await walletSimple.getNextSequenceId();
-
-            console.log(`    Signing tx using signer one(${signerOneAddress})`);
-            const signedTx = await generateSignedTx(
-                sequenceId,
-                baseTx,
-                60,
-                signerOne,
-            );
-
-            console.log(`    Executing tx using signer two(${signerAddresses[1]})`);
-            return walletSimpleForSignerTwo.sendMultiSig(
-                signedTx.toAddress,
-                signedTx.value.toString(),
-                signedTx.data,
-                signedTx.expireTime,
-                signedTx.sequenceId,
-                signedTx.signature,
-                txOverride,
-            );
-        }, false
-    );
-
-    console.log(
-        "Balance after mint:",
-        (await mintableToken.balanceOf(deployerAddress)).toString(),
-    );
+  console.log(
+    "Balance after mint:",
+    (await mintableToken.balanceOf(deployerAddress)).toString(),
+  );
 }
 
 async function getSignature(
-    signer: Signer,
-    prefix: string,
-    toAddress: string,
-    value: string,
-    data: string,
-    expireTime: number,
-    sequenceId: BigNumber,
+  signer: Signer,
+  prefix: string,
+  toAddress: string,
+  value: string,
+  data: string,
+  expireTime: number,
+  sequenceId: BigNumber,
 ): Promise<string> {
-    const operationHash = ethersUtils.solidityKeccak256(
-        ["string", "address", "uint256", "bytes", "uint256", "uint256"],
-        [prefix, toAddress, value, data, expireTime, sequenceId],
-    );
+  console.log([prefix, toAddress, value, data, expireTime, sequenceId]);
+  const operationHash = ethersUtils.solidityKeccak256(
+    ["string", "address", "uint256", "bytes", "uint256", "uint256"],
+    [prefix, toAddress, value, data, expireTime, sequenceId],
+  );
 
-    return signer.signMessage(ethersUtils.arrayify(operationHash));
+  const signature = await signer.signMessage(
+    ethersUtils.arrayify(operationHash),
+  );
+
+  // const packed_signature = deployer.godwoker.packSignature(origin_signature);
+
+  // console.log(`origin_signature: ${origin_signature}, packed_signature: ${packed_signature}`);
+
+  return signature;
 }
 
 interface ISignedContractInteractionTx {
-    toAddress: string;
-    value: string;
-    data: string;
-    expireTime: number;
-    sequenceId: string;
-    signature: string;
+  toAddress: string;
+  value: string;
+  data: string;
+  expireTime: number;
+  sequenceId: string;
+  signature: string;
 }
 
 export async function generateSignedTx(
-    sequenceId: BigNumber,
-    baseTx: PopulatedTransaction,
-    expireIn: number,
-    signer: Signer,
+  sequenceId: BigNumber,
+  baseTx: PopulatedTransaction,
+  expireIn: number,
+  signer: Signer,
 ): Promise<ISignedContractInteractionTx> {
-    const expireTime = Date.now() + expireIn * 1000;
+  const expireTime = Date.now() + expireIn * 1000;
 
-    const unsignedTx = {
-        toAddress: baseTx.to!,
-        value: baseTx.value || "0",
-        data: baseTx.data!,
-        expireTime,
-        sequenceId,
-    };
+  const unsignedTx = {
+    toAddress: baseTx.to!,
+    value: baseTx.value || "0",
+    data: baseTx.data!,
+    expireTime,
+    sequenceId,
+  };
 
-    const signature = await getSignature(
-        signer,
-        "ETHER",
-        unsignedTx.toAddress,
-        unsignedTx.value.toString(),
-        unsignedTx.data,
-        unsignedTx.expireTime,
-        unsignedTx.sequenceId,
-    );
+  const signature = await getSignature(
+    signer,
+    "ETHER",
+    unsignedTx.toAddress,
+    unsignedTx.value.toString(),
+    unsignedTx.data,
+    unsignedTx.expireTime,
+    unsignedTx.sequenceId,
+  );
 
-    return {
-        toAddress: unsignedTx.toAddress.toLowerCase(),
-        value: unsignedTx.value.toString(),
-        data: unsignedTx.data,
-        expireTime,
-        sequenceId: sequenceId.toString(),
-        signature,
-    };
+  console.log(`signature: ${signature}`);
+  console.log(`unsignedTx.data: ${unsignedTx.data}`);
+
+  return {
+    toAddress: unsignedTx.toAddress.toLowerCase(),
+    value: unsignedTx.value.toString(),
+    data: unsignedTx.data,
+    expireTime,
+    sequenceId: sequenceId.toString(),
+    signature,
+  };
 }
 
 main()
-    .then(() => {
-        process.exit(0);
-    })
-    .catch((err) => {
-        console.log("err", err);
-        process.exit(1);
-    });
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.log("err", err);
+    process.exit(1);
+  });
