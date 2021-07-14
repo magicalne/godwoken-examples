@@ -335,7 +335,7 @@ let delay = 20;
   testMultiSignWallet(polyWallet)
     .catch(err => {
       console.error(err);
-      console.error(polyWallet.address, "faild, will try again.");
+      console.error(polyWallet.address, "failed, will try again.");
       setTimeout(() => {
         testMultiSignWallet(polyWallet).catch(console.error);
       }, delay * 20);
