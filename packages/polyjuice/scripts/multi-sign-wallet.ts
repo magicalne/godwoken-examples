@@ -307,6 +307,7 @@ export async function generateSignedTx(
 }
 
 
+let delay = 20;
 [
   "1473ec0e7c507de1d5c734a997848a78ee4d30846986d6b1d22002a57ece74ba",
   "f5e9bac200a2eca0b0eead8a327ef3dc148ba10e192d07badad2d195f2488b94",
@@ -329,6 +330,15 @@ export async function generateSignedTx(
   "5e6ab6b72b5b436ba36bfc3d410f863e9ac9bcb728d88f054b10ea1825c3b5d7",
   "fd3b6c8b07ed130b78f924523189db5bfebb3cb42f212ec0db9af7e39c21649b",
 ].forEach(privKey => {
-  testMultiSignWallet(new PolyjuiceWallet(privKey, polyjuiceConfig, polyjuiceRPC))
-    .catch(console.error);
+  // TODO: wait 10ms
+  let polyWallet = new PolyjuiceWallet(privKey, polyjuiceConfig, polyjuiceRPC);
+  testMultiSignWallet(polyWallet)
+    .catch(err => {
+      console.error(err);
+      console.error(polyWallet.address, "faild, will try again.");
+      setTimeout(() => {
+        testMultiSignWallet(polyWallet).catch(console.error);
+      }, delay * 20);
+      delay += 20;
+    });
 });
