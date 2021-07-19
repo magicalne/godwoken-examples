@@ -15,12 +15,13 @@
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
     "@godwoken-examples/godwoken": "^0.0.1",
+    "@polyjuice-provider/ethers": "0.0.1-rc5",
     "axios": "^0.21.1",
     "ckb-js-toolkit": "^0.10.2",
     "dotenv": "^10.0.0",
     "ethereumjs-util": "^7.0.10",
     "ethers": "^5.4.0",
-    "keccak256": "^1.0.2",
-    "@polyjuice-provider/ethers": "0.0.1-rc4"
+    "faye-websocket": "^0.11.4",
+    "keccak256": "^1.0.2"
   }
 }

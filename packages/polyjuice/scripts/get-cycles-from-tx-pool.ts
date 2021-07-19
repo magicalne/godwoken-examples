@@ -4,7 +4,8 @@ import JSBI from "jsbi";
 
 const WebSocket = require("faye-websocket");
 // connect to CKB_RPC WebSocket, should enable enable rpc.ws_listen_address in ckb.toml
-let ws = new WebSocket.Client("ws://localhost:28114");
+let ws = new WebSocket.Client(process.env.CKB_WS || "ws://localhost:28114");
+// CKB_WS=ws://192.168.5.245:49174 yarn ts-node scripts/get-cycles-from-tx-pool.ts cycles-from-tx-pool.t
 
 ws.on('open', function (event) {
   console.log('open');

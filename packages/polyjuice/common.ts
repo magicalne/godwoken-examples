@@ -29,36 +29,27 @@ const godwokerOption: GodwokerOption = {
     },
   },
 };
-export const token_rpc = new PolyjuiceJsonRpcProvider(
-  godwokerOption,
-  SimpleToken.abi as AbiItems,
-  process.env.WEB3_RPC,
-);
-export const polyjuiceRPC = new PolyjuiceJsonRpcProvider(
-  godwokerOption,
-  WalletSimple.abi as AbiItems,
-  process.env.WEB3_RPC,
-);
-export const polyjuice_config: PolyjuiceConfig = {
-  godwokerOption: godwokerOption,
-  web3RpcUrl: process.env.WEB3_RPC!,
-  abiItems: WalletSimple.abi as AbiItems,
+// export const token_rpc = new PolyjuiceJsonRpcProvider(
+//   godwokerOption,
+//   SimpleToken.abi as AbiItems,
+//   process.env.WEB3_RPC,
+// );
+export const polyjuiceConfig: PolyjuiceConfig = {
+  rollupTypeHash: process.env.ROLLUP_TYPE_HASH!,
+  ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH!,
+  web3Url: process.env.WEB3_RPC!
 };
-// const token_polyjuice_config: PolyjuiceConfig = {
-//   godwokerOption: godwokerOption,
-//   web3RpcUrl: process.env.WEB3_RPC!,
-//   abiItems: SimpleToken.abi as AbiItems,
-// };
+
+export const polyjuiceRPC = new PolyjuiceJsonRpcProvider(
+  polyjuiceConfig,
+  polyjuiceConfig.web3Url
+);
+
 export const polyjuiceDeployer = new PolyjuiceWallet(
   DEPLOYER_PRIVATE_KEY,
-  polyjuice_config,
+  polyjuiceConfig,
   polyjuiceRPC,
 );
-// export const token_deployer = new PolyjuiceWallet(
-//   DEPLOYER_PRIVATE_KEY,
-//   token_polyjuice_config,
-//   token_rpc,
-// );
 
 export const defaultRPC = new ethers.providers.JsonRpcProvider(
   process.env.WEB3_RPC,
@@ -70,6 +61,38 @@ export const defaultDeployer = new ethers.Wallet(
 
 export const networkSuffix = NETWORK_SUFFIX;
 export const isGodwokenDevnet = networkSuffix === "gw-devnet";
+
+export async function depositFromL1toL2(wallet: PolyjuiceWallet, minBalance = 400n) {
+  const balance = await web3Rpc.getBalance(wallet.address);
+  if (balance.gt(minBalance)) {
+    console.log(`\t Balance of ${wallet.address} is ${balance}`);
+    return;
+  }
+
+  if (GODWOKEN_API_URL == null) {
+    throw new Error("process.env.GODWOKEN_API_URL is required");
+  }
+
+  console.log("\t", wallet.address, "self depositing");
+  let res = await axios.get(`${GODWOKEN_API_URL}/deposit`, {
+    params: { privKey: wallet.privateKey }
+  });
+
+  if (res.data.status !== "ok") {
+    console.error(`    ${wallet.address} Failed to self deposit, try again...`);
+    // console.debug(res);
+    res = await axios.get(`${GODWOKEN_API_URL}/deposit`, {
+      params: { eth_address: wallet.address }
+    });
+    if (res.data.status !== "ok") {
+      console.error(`    ${wallet.address} Failed to deposit.`);
+      return;
+      // throw new Error("Failed to deposit");
+    }
+  }
+
+  console.log(`    Account ID:`, res.data.data.account_id);
+}
 
 export async function initGwAccountIfNeeded(account: string, usingRPC = web3Rpc) {
   const balance = await usingRPC.getBalance(account);
@@ -89,7 +112,6 @@ export async function initGwAccountIfNeeded(account: string, usingRPC = web3Rpc)
   }
 
   console.log("    It may take a few minutes...");
-
   let res = await axios.get(`${GODWOKEN_API_URL}/deposit`, {
     params: {
       eth_address: account,
