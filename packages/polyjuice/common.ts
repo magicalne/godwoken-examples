@@ -1,10 +1,8 @@
 import { ethers } from "ethers";
 import { PolyjuiceWallet, PolyjuiceConfig } from "@polyjuice-provider/ethers";
 import { PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
-import { GodwokerOption } from "@polyjuice-provider/base/lib/util";
 import dotenv from "dotenv";
 import axios from "axios";
-import SimpleToken from "./contracts/MintableToken.sol/MintableToken.json";
 import WalletSimple from "./contracts/WalletSimple.sol/WalletSimple.json";
 import { AbiItems } from "@polyjuice-provider/base/lib/abi";
 import path from "path";
@@ -15,28 +13,47 @@ dotenv.config({
 axios.defaults.withCredentials = true;
 
 const { DEPLOYER_PRIVATE_KEY, NETWORK_SUFFIX, GODWOKEN_API_URL } = process.env;
+
 if (DEPLOYER_PRIVATE_KEY == null) {
   console.log("process.env.DEPLOYER_PRIVATE_KEY is required");
   process.exit(1);
 }
 
-const godwokerOption: GodwokerOption = {
-  godwoken: {
-    rollup_type_hash: process.env.ROLLUP_TYPE_HASH!,
-    eth_account_lock: {
-      code_hash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH!,
-      hash_type: "type",
-    },
-  },
+// godwoken-config.toml -> relative path: ../../../kicker/workspace/config.toml 
+const godwokenConfigPath = require("path").resolve(
+  __dirname, "../../../kicker/workspace/config.toml");
+const tomlStr = require("fs").readFileSync(godwokenConfigPath);
+const configJson = require('@iarna/toml').parse(tomlStr);
+const ROLLUP_TYPE_HASH
+  = process.env.ROLLUP_TYPE_HASH || configJson.genesis.rollup_type_hash;
+const ETH_ACCOUNT_LOCK_CODE_HASH 
+  = process.env.ETH_ACCOUNT_LOCK_CODE_HASH || configJson.web3_indexer.eth_account_lock_hash;
+
+export const PolyjuiceWalletConfig: PolyjuiceConfig = {
+  rollupTypeHash: ROLLUP_TYPE_HASH,
+  ethAccountLockCodeHash: ETH_ACCOUNT_LOCK_CODE_HASH,
+  web3Url: process.env.WEB3_RPC!,
+  abiItems: WalletSimple.abi as AbiItems,
 };
+
+// const godwokerOption: GodwokerOption = {
+//   godwoken: {
+//     rollup_type_hash: ROLLUP_TYPE_HASH!,
+//     eth_account_lock: {
+//       code_hash: ETH_ACCOUNT_LOCK_CODE_HASH!,
+//       hash_type: "type",
+//     },
+//   },
+// };
 // export const token_rpc = new PolyjuiceJsonRpcProvider(
 //   godwokerOption,
 //   SimpleToken.abi as AbiItems,
 //   process.env.WEB3_RPC,
 // );
+
 export const polyjuiceConfig: PolyjuiceConfig = {
-  rollupTypeHash: process.env.ROLLUP_TYPE_HASH!,
-  ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH!,
+  rollupTypeHash: ROLLUP_TYPE_HASH,
+  ethAccountLockCodeHash: ETH_ACCOUNT_LOCK_CODE_HASH,
   web3Url: process.env.WEB3_RPC!
 };
 

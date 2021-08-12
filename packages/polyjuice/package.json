@@ -15,7 +15,7 @@
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
     "@godwoken-examples/godwoken": "^0.0.1",
-    "@polyjuice-provider/ethers": "0.0.1-rc5",
+    "@polyjuice-provider/ethers": "0.0.1-rc6",
     "axios": "^0.21.1",
     "ckb-js-toolkit": "^0.10.2",
     "dotenv": "^10.0.0",

@@ -14,7 +14,7 @@ import {
   numberToUInt32LE,
   UInt32LEToNumber,
 } from "@godwoken-examples/godwoken";
-import { ETHAddress, Polyjuice } from "@godwoken-examples/polyjuice";
+import { Polyjuice } from "@godwoken-examples/polyjuice";
 import {
   ROLLUP_TYPE_HASH,
   VALIDATOR_SCRIPT_TYPE_HASH,
@@ -26,6 +26,7 @@ import {
 } from "./modules/godwoken";
 import { deploymentConfig } from "./modules/deployment-config";
 
+type ETHAddress = HexString;
 const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
 
 const program = new Command();

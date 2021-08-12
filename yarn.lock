@@ -506,13 +506,13 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
-"@polyjuice-provider/base@0.0.1-rc5":
-  version "0.0.1-rc5"
-  resolved "https://registry.nlark.com/@polyjuice-provider/base/download/@polyjuice-provider/base-0.0.1-rc5.tgz#17c68770860106ff9525919e73357aa84bdb34df"
-  integrity sha1-F8aHcIYBBv+VJZGeczV6qEvbNN8=
+"@polyjuice-provider/base@0.0.1-rc6":
+  version "0.0.1-rc6"
+  resolved "https://registry.nlark.com/@polyjuice-provider/base/download/@polyjuice-provider/base-0.0.1-rc6.tgz#7b9193802caa4cb1e2d18ba8293ce471508830ae"
+  integrity sha1-e5GTgCyqTLHi0YuoKTzkcVCIMK4=
   dependencies:
     "@ckb-lumos/base" "^0.16.0"
-    "@polyjuice-provider/godwoken" "^0.0.1-rc5"
+    "@polyjuice-provider/godwoken" "^0.0.1-rc6"
     buffer "^6.0.3"
     encoding "^0.1.13"
     eth-sig-util "^3.0.1"
@@ -521,20 +521,20 @@
     web3 "^1.3.4"
     xhr2-cookies "^1.1.0"
 
-"@polyjuice-provider/ethers@0.0.1-rc5":
-  version "0.0.1-rc5"
-  resolved "https://registry.nlark.com/@polyjuice-provider/ethers/download/@polyjuice-provider/ethers-0.0.1-rc5.tgz#693ba5eb11339780dce4b682a06c7f49a1827696"
-  integrity sha1-aTul6xEzl4Dc5LaCoGx/SaGCdpY=
+"@polyjuice-provider/ethers@0.0.1-rc6":
+  version "0.0.1-rc6"
+  resolved "https://registry.nlark.com/@polyjuice-provider/ethers/download/@polyjuice-provider/ethers-0.0.1-rc6.tgz#6062dc1fdbdfcef2dea423a437bfd6f6031d43fe"
+  integrity sha1-YGLcH9vfzvLepCOkN7/W9gMdQ/4=
   dependencies:
-    "@polyjuice-provider/base" "0.0.1-rc5"
+    "@polyjuice-provider/base" "0.0.1-rc6"
     buffer "^6.0.3"
     encoding "^0.1.13"
     ethers "^5.4.0"
 
-"@polyjuice-provider/godwoken@^0.0.1-rc5":
-  version "0.0.1-rc5"
-  resolved "https://registry.nlark.com/@polyjuice-provider/godwoken/download/@polyjuice-provider/godwoken-0.0.1-rc5.tgz#75d48ad354eede4b7ada7b7f5a231eb15f08761e"
-  integrity sha1-ddSK01Tu3kt62nt/WiMesV8Idh4=
+"@polyjuice-provider/godwoken@^0.0.1-rc6":
+  version "0.0.1-rc6"
+  resolved "https://registry.nlark.com/@polyjuice-provider/godwoken/download/@polyjuice-provider/godwoken-0.0.1-rc6.tgz#7a88a38fd3665d2cabf5faa800b27d18a713c572"
+  integrity sha1-eoijj9NmXSyr9fqoALJ9GKcTxXI=
   dependencies:
     "@ckb-lumos/base" "^0.16.0"
     ckb-js-toolkit "^0.9.3"

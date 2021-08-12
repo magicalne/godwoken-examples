@@ -1,26 +1,15 @@
-import { AbiItems } from "@polyjuice-provider/base/lib/abi";
-import { PolyjuiceConfig, PolyjuiceWallet } from "@polyjuice-provider/ethers";
-import dotenv from "dotenv";
+import { PolyjuiceWallet } from "@polyjuice-provider/ethers";
 import {
   BigNumber, BigNumberish, CallOverrides, Contract, ContractFactory, Overrides, PopulatedTransaction, providers, Signer, utils as ethersUtils
 } from "ethers";
 import {
-  depositFromL1toL2,
+  depositFromL1toL2, PolyjuiceWalletConfig,
   initGwAccountIfNeeded,
   isGodwoken, networkSuffix, polyjuiceRPC, web3Rpc
 } from "../common";
 import MintableToken from "../contracts/MintableToken.sol/MintableToken.json";
 import WalletSimple from "../contracts/WalletSimple.sol/WalletSimple.json";
 import { TransactionSubmitter } from "../TransactionSubmitter";
-
-dotenv.config();
-
-const PolyjuiceWalletConfig: PolyjuiceConfig = {
-  rollupTypeHash: process.env.ROLLUP_TYPE_HASH!,
-  ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH!,
-  web3Url: process.env.WEB3_RPC!,
-  abiItems: WalletSimple.abi as AbiItems,
-};
 
 type TCallStatic = Contract["callStatic"];
 type TransactionResponse = providers.TransactionResponse;
@@ -307,7 +296,7 @@ export async function generateSignedTx(
 }
 
 
-let delay = 50;
+let delay = 60;
 [
   // "1473ec0e7c507de1d5c734a997848a78ee4d30846986d6b1d22002a57ece74ba",
   // "f5e9bac200a2eca0b0eead8a327ef3dc148ba10e192d07badad2d195f2488b94",
@@ -330,7 +319,7 @@ let delay = 50;
   // "5e6ab6b72b5b436ba36bfc3d410f863e9ac9bcb728d88f054b10ea1825c3b5d7",
   // "fd3b6c8b07ed130b78f924523189db5bfebb3cb42f212ec0db9af7e39c21649b",
 
-  // // 20
+  // 20
   // "1390c30e5d5867ee7246619173b5922d3b04009cab9e9d91e14506231281a997",
   // "2dc6374a2238e414e51874f514b0fa871f8ce0eb1e7ecaa0aed229312ffc91b0",
   // "15f0805f5ebabda961cca1e97cdae03919b07d3eee4a9074c075ee2e80f2da9f",
@@ -352,7 +341,7 @@ let delay = 50;
   // "68777010f63b24b117f7bb28848b9c841d341b3f02b632ae2f6cdf59c6cd575e",
   // "d5ffdf1c0c22c29ac05e7fd15113c47d23c59e671032a4a91f88e989c45aa9a5",
 
-  // // 20
+  // 20
   // "423bcbaf313bba759f32860277338eceebfae3fd1f424c9920d0e396f6d08139",
   // "4f05777a56806bda4d6869ceb05ba77992a818839b04131d04cded4f7a545c70",
   // "63a83772e6e06289355fc49179a3b9af7c74a43c679d28430caf31fe6a329cc4",
@@ -374,8 +363,8 @@ let delay = 50;
   // "459dbf4bed9a5698901fcdbb385afb6ead57efa28ca214d96552688e7b7d6a90",
   // "493f323254166759df26aeb7d9c09b580d87cf12339cb45c1a6c9405e223a805",
 
-  // // 20
-  "b66d31cb8d1490f9517e7471be480857d8d5b0b8a6e667a02ffa792e82928daf",
+  // 20
+  // "b66d31cb8d1490f9517e7471be480857d8d5b0b8a6e667a02ffa792e82928daf",
   // "bd76398458cde6292427ec0db469b3a5860bd8685b3fa96c0b7b59c7dbc1e57e",
   // "b027d7c1091c54b3d473ad1f4261814e4619e3de8de47d07c85d84f1b68907ed",
   // "b77f3f3edc8152dbc4df1ac3925c31fc309973404d0218d2da168aaa1c6d0073",
@@ -393,10 +382,10 @@ let delay = 50;
   // "8ce913701ddf7da2b97a9241eceac1d4610effc93b416dfaf8021784a5440257",
   // "4eb74d85f7af7bad824e8cd281ad51d934997f82fde184ee8540c53d845eee2a",
   // "d97c287fb441f6b1235494535fcd876f362a6b956fe8e7d56866842f0906fc59",
-  // "9b97552a1745e43d890655c615a1c41242485351c8242708890ec6ab72c18404",
-  // "60d9b26c641569911a95bb18521ba148b6ac64025e4a11dd0c0649392fbc1c10",
+  "9b97552a1745e43d890655c615a1c41242485351c8242708890ec6ab72c18404",
+  "60d9b26c641569911a95bb18521ba148b6ac64025e4a11dd0c0649392fbc1c10",
 
-].forEach(async (privKey, idx) => {  
+].forEach(async (privKey, idx) => {
   // TODO: wait 10ms
 
   let polyWallet = new PolyjuiceWallet(privKey, PolyjuiceWalletConfig, polyjuiceRPC);
@@ -411,6 +400,6 @@ let delay = 50;
       setTimeout(() => {
         testMultiSignWallet(polyWallet).catch(console.error);
       }, delay * 1000);
-      delay += 50;
+      delay += 60;
     });
 });
