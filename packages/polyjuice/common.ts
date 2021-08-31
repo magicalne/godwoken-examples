@@ -1,10 +1,11 @@
 import { ethers } from "ethers";
-import { PolyjuiceWallet, PolyjuiceConfig } from "@polyjuice-provider/ethers";
+import { PolyjuiceConfig } from "@polyjuice-provider/base";
+import { PolyjuiceWallet } from "@polyjuice-provider/ethers"
 import { PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
 import dotenv from "dotenv";
 import axios from "axios";
 import WalletSimple from "./contracts/WalletSimple.sol/WalletSimple.json";
-import { AbiItems } from "@polyjuice-provider/base/lib/abi";
+import { AbiItems } from "@polyjuice-provider/base";
 import path from "path";
 
 dotenv.config({
