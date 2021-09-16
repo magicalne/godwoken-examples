@@ -105,6 +105,7 @@ script/
 cli-run/
 packages/tools/configs/godwoken-config.json
 packages/tools/configs/scripts-deploy-result.json
+packages/tools/configs/devnet.env
 
 lumos-config-generator
 config.json
