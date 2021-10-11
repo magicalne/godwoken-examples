@@ -57,12 +57,10 @@ async function sendTx(
     ownerLockHash,
     layer2Lock
   );
-  console.log(
-    `Layer 2 lock script hash: ${utils.computeScriptHash(
-      depositLockArgs.layer2_lock
-    )}`
-  );
-  console.log("↑ Using this script hash to get user account id ↑");
+  const l2ScriptHash = utils.computeScriptHash(depositLockArgs.layer2_lock);
+  console.log(`Godwoken script hash: ${l2ScriptHash}`);
+
+  console.log("Godwoken script hash(160):", l2ScriptHash.slice(0, 42));
 
   const serializedArgs: HexString = serializeArgs(depositLockArgs);
   const depositLock: Script = generateDepositLock(
@@ -117,7 +115,7 @@ async function sendTx(
   const tx = sealTransaction(txSkeleton, [content]);
 
   const rpc = new RPC(ckbUrl);
-  const txHash: Hash = await rpc.send_transaction(tx);
+  const txHash: Hash = await rpc.send_transaction(tx, "passthrough");
 
   return [txHash, layer2SudtScriptHash];
 }
@@ -138,10 +136,7 @@ export const run = async (program: commander.Command) => {
   }
 
   const godwokenRpc = program.parent.godwokenRpc;
-  const godwoken = new Godwoken(
-    godwokenRpc,
-    program.parent.prefixWithGw !== false
-  );
+  const godwoken = new Godwoken(godwokenRpc);
 
   try {
     const [txHash, layer2SudtScriptHash] = await sendTx(

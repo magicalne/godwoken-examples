@@ -9,21 +9,9 @@
   ],
   "declarations": [
     {
-      "type": "option",
-      "name": "Byte32Opt",
-      "item": "Byte32"
-    },
-    {
-      "type": "array",
-      "name": "Byte20",
-      "item": "byte",
-      "item_count": 20
-    },
-    {
-      "type": "array",
-      "name": "Signature",
-      "item": "byte",
-      "item_count": 65
+      "type": "fixvec",
+      "name": "Uint32Vec",
+      "item": "Uint32"
     },
     {
       "type": "struct",
@@ -136,10 +124,6 @@
           "type": "Uint64"
         },
         {
-          "name": "compatible_chain_id",
-          "type": "Uint32"
-        },
-        {
           "name": "reward_burn_rate",
           "type": "byte"
         },
@@ -185,7 +169,7 @@
         },
         {
           "name": "signature",
-          "type": "Signature"
+          "type": "Bytes"
         }
       ]
     },
@@ -373,16 +357,20 @@
         {
           "name": "payment_lock_hash",
           "type": "Byte32"
+        },
+        {
+          "name": "fee",
+          "type": "Fee"
         }
       ]
     },
     {
-      "type": "fixvec",
+      "type": "dynvec",
       "name": "WithdrawalRequestVec",
       "item": "WithdrawalRequest"
     },
     {
-      "type": "struct",
+      "type": "table",
       "name": "WithdrawalRequest",
       "fields": [
         {
@@ -391,7 +379,7 @@
         },
         {
           "name": "signature",
-          "type": "Signature"
+          "type": "Bytes"
         }
       ]
     },
@@ -572,12 +560,30 @@
       ]
     },
     {
+      "type": "struct",
+      "name": "Fee",
+      "fields": [
+        {
+          "name": "sudt_id",
+          "type": "Uint32"
+        },
+        {
+          "name": "amount",
+          "type": "Uint128"
+        }
+      ]
+    },
+    {
       "type": "table",
       "name": "CreateAccount",
       "fields": [
         {
           "name": "script",
           "type": "Script"
+        },
+        {
+          "name": "fee",
+          "type": "Fee"
         }
       ]
     },
@@ -590,22 +596,22 @@
       ]
     },
     {
-      "type": "struct",
+      "type": "table",
       "name": "SUDTQuery",
       "fields": [
         {
-          "name": "account_id",
-          "type": "Uint32"
+          "name": "short_address",
+          "type": "Bytes"
         }
       ]
     },
     {
-      "type": "struct",
+      "type": "table",
       "name": "SUDTTransfer",
       "fields": [
         {
           "name": "to",
-          "type": "Uint32"
+          "type": "Bytes"
         },
         {
           "name": "amount",
@@ -700,6 +706,10 @@
           "type": "KVPairVec"
         },
         {
+          "name": "load_data",
+          "type": "BytesVec"
+        },
+        {
           "name": "scripts",
           "type": "ScriptVec"
         },
@@ -710,6 +720,20 @@
         {
           "name": "block_hashes",
           "type": "BlockHashEntryVec"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "name": "CKBMerkleProof",
+      "fields": [
+        {
+          "name": "indices",
+          "type": "Uint32Vec"
+        },
+        {
+          "name": "lemmas",
+          "type": "Byte32Vec"
         }
       ]
     },
@@ -727,7 +751,7 @@
         },
         {
           "name": "tx_proof",
-          "type": "Bytes"
+          "type": "CKBMerkleProof"
         },
         {
           "name": "kv_state_proof",
@@ -745,7 +769,7 @@
     },
     {
       "type": "table",
-      "name": "VerifySignatureContext",
+      "name": "VerifyTransactionSignatureContext",
       "fields": [
         {
           "name": "account_count",
@@ -766,28 +790,24 @@
       "name": "VerifyTransactionSignatureWitness",
       "fields": [
         {
-          "name": "l2tx",
-          "type": "L2Transaction"
-        },
-        {
           "name": "raw_l2block",
           "type": "RawL2Block"
         },
         {
+          "name": "l2tx",
+          "type": "L2Transaction"
+        },
+        {
           "name": "tx_proof",
-          "type": "Bytes"
+          "type": "CKBMerkleProof"
         },
         {
           "name": "kv_state_proof",
           "type": "Bytes"
         },
         {
-          "name": "block_hashes_proof",
-          "type": "Bytes"
-        },
-        {
           "name": "context",
-          "type": "VerifySignatureContext"
+          "type": "VerifyTransactionSignatureContext"
         }
       ]
     },
@@ -800,20 +820,12 @@
           "type": "RawL2Block"
         },
         {
-          "name": "kv_state_proof",
-          "type": "Bytes"
-        },
-        {
           "name": "withdrawal_request",
           "type": "WithdrawalRequest"
         },
         {
           "name": "withdrawal_proof",
-          "type": "Bytes"
-        },
-        {
-          "name": "context",
-          "type": "VerifySignatureContext"
+          "type": "CKBMerkleProof"
         }
       ]
     },
@@ -1159,7 +1171,7 @@
           "type": "Byte32"
         },
         {
-          "name": "uncles_hash",
+          "name": "extra_hash",
           "type": "Byte32"
         },
         {
@@ -1218,6 +1230,33 @@
         {
           "name": "proposals",
           "type": "ProposalShortIdVec"
+        }
+      ],
+      "imported_depth": 1
+    },
+    {
+      "type": "table",
+      "name": "BlockV1",
+      "fields": [
+        {
+          "name": "header",
+          "type": "Header"
+        },
+        {
+          "name": "uncles",
+          "type": "UncleBlockVec"
+        },
+        {
+          "name": "transactions",
+          "type": "TransactionVec"
+        },
+        {
+          "name": "proposals",
+          "type": "ProposalShortIdVec"
+        },
+        {
+          "name": "extension",
+          "type": "Bytes"
         }
       ],
       "imported_depth": 1

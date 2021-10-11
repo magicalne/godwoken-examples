@@ -1,13 +1,18 @@
 import { Command } from "commander";
-import { privateKeyToAccountId, transferCLI } from "../modules/godwoken";
+import {
+  parseAccountToShortAddress,
+  privateKeyToAccountId,
+  transferCLI,
+} from "../modules/godwoken";
 import { privateKeyToEthAddress } from "../modules/utils";
-import { initConfigAndSync } from "./common";
+import { initConfigAndSync, waitForTransfer } from "./common";
 import { Godwoken } from "@godwoken-examples/godwoken";
+import { HexString } from "@ckb-lumos/base";
 
 async function transfer(
   godwoken: Godwoken,
   privateKey: string,
-  toId: number,
+  toAddress: HexString,
   sudtId: number,
   amount: bigint,
   fee: bigint
@@ -21,7 +26,7 @@ async function transfer(
     godwoken,
     privateKey,
     fromId,
-    toId,
+    toAddress,
     sudtId,
     amount,
     fee
@@ -35,28 +40,29 @@ export const run = async (program: Command) => {
 
   const amount = program.amount;
   const fee = program.fee;
-  const toId = program.toId;
+  const toAccount = program.to;
   const sudtId = program.sudtId;
   const godwokenURL = program.parent.godwokenRpc;
 
-  const godwoken = new Godwoken(
-    godwokenURL,
-    program.parent.prefixWithGw !== false
-  );
+  const godwoken = new Godwoken(godwokenURL);
 
   const privateKey = program.privateKey;
 
   console.log("eth address:", privateKeyToEthAddress(privateKey));
 
+  const toAddress = await parseAccountToShortAddress(godwoken, toAccount);
+
   try {
-    await transfer(
+    const txHash = await transfer(
       godwoken,
       privateKey,
-      +toId,
+      toAddress,
       +sudtId,
       BigInt(amount),
       BigInt(fee)
     );
+
+    await waitForTransfer(godwoken, txHash);
 
     process.exit(0);
   } catch (e) {

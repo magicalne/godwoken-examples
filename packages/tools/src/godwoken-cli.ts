@@ -38,8 +38,6 @@ import {
   accountScriptHash,
   generateLockScript,
 } from "./common";
-import { privateKeyToAccountId } from "./modules/godwoken";
-import { asyncSleep } from "./modules/utils";
 
 const program = new Command();
 program
@@ -55,7 +53,7 @@ program
   .description("Get nonce from account")
   .action(getNonce);
 program
-  .command("getBalance <sudt_id> <account_id>")
+  .command("getBalance <short_address> <sudt_id>")
   .description("Get balance from account")
   .action(getBalance);
 program
@@ -95,10 +93,6 @@ program
   .description("Get account id by script hash")
   .action(getAccountIdByScriptHash);
 program
-  .command("getAccountId <privkey>")
-  .description("Get account id by private key")
-  .action(getAccountIdByPrivKey);
-program
   .command("getScriptHash <account_id>")
   .description("Get script hash by account id")
   .action(getScriptHash);
@@ -115,53 +109,18 @@ program
     "Unlock one finalized withdrawal locked cell (NOTE: need lumos-config path)"
   )
   .action(unlockWithdraw);
-program
-  .command("getTransactionReceipt <l2TxHash>")
-  .description("Returns the receipt of a transaction by transaction hash.")
-  .action(getTransactionReceipt)
-
-program
-  .command("getL1Transaction <txHash>")
-  .description("Returns the transaction info")
-  .option("-r, --rpc <rpc>", "ckb rpc path", "http://127.0.0.1:8114")
-  .action(getL1Transaction);
 
 program.parse(argv);
-
-async function getL1Transaction(txHash: HexString) {
-  console.log("l1TxHash:", txHash);
-  
-  const ckbRpc = new RPC(program.ckbRpc);
-  const txWithStatus = await ckbRpc.get_transaction(txHash);
-  console.log("transaction with status:", JSON.stringify(txWithStatus));
-}
-
-async function getTransactionReceipt(l2TxHash: HexString) {
-  const godwoken = new Godwoken(program.rpc);
-  // wait for transaction receipt
-  const loopInterval = 3;
-  for (let i = 0; i < 300; i += loopInterval) {
-    console.log(`waiting for transaction receipt ... waiting for ${i} seconds`);
-    const receipt = await godwoken.getTransactionReceipt(l2TxHash);
-    if (receipt) {
-      console.log("transaction receipt:", receipt);
-      break;
-    }
-    await asyncSleep(loopInterval * 1000);
-  }
-}
 
 async function getNonce(account_id: string) {
   const godwoken = new Godwoken(program.rpc);
   const nonce = await godwoken.getNonce(parseInt(account_id));
   console.log("nonce:", nonce);
 }
-async function getBalance(sudt_id: string, account_id: string) {
+
+async function getBalance(short_address: string, sudt_id: string) {
   const godwoken = new Godwoken(program.rpc);
-  const balance = await godwoken.getBalance(
-    parseInt(sudt_id),
-    parseInt(account_id)
-  );
+  const balance = await godwoken.getBalance(+sudt_id, short_address);
   console.log("balance:", balance);
 }
 
@@ -296,18 +255,11 @@ async function getAccountIdByScriptHash(script_hash: string) {
   console.log("Account id:", account_id);
 }
 
-async function getAccountIdByPrivKey(privkey: string) {
-  const godwoken = new Godwoken(program.rpc);
-  const accountId = await privateKeyToAccountId(godwoken, privkey);  
-  console.log("Account id:", accountId);
-}
-
 async function getScriptHash(account_id: string) {
   const godwoken = new Godwoken(program.rpc);
   const script_hash = await godwoken.getScriptHash(parseInt(account_id));
   console.log("script hash:", script_hash);
 }
-
 async function getScript(script_hash: string) {
   const godwoken = new Godwoken(program.rpc);
   const script = await godwoken.getScript(script_hash);
@@ -514,7 +466,7 @@ async function unlockWithdraw(privkey: string, runner_config_path: string) {
   const tx = sealTransaction(txSkeleton, [content]);
   const rpc = new RPC(program.ckbRpc);
   try {
-    const txHash: Hash = await rpc.send_transaction(tx);
+    const txHash: Hash = await rpc.send_transaction(tx, "passthrough");
     console.log("txHash:", txHash);
     process.exit(0);
   } catch (e) {

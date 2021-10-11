@@ -1,32 +1,26 @@
 import { Command } from "commander";
+import { toEthAddress, toShortAddress } from "./account/address";
+
 import { run as depositRun } from "./account/deposit-ckb";
 import { run as depositSudtRun } from "./account/deposit-sudt";
 import { getBalance } from "./account/get-balance";
 import { run as transferRun } from "./account/transfer";
 import { run as withdrawRun } from "./account/withdraw";
-import { getSudtScriptArgs } from "./modules/utils";
+import { run as unlockRun } from "./account/unlock";
 
 const program = new Command();
-program.version("0.1.0");
+program.version("0.0.1");
 
 let defaultGodwokenRpc = "http://127.0.0.1:8119";
-let defaultPrefixWithGw = false;
 if (!process.env.LUMOS_CONFIG_FILE) {
-  defaultGodwokenRpc = "http://godwoken-testnet-web3-rpc.ckbapp.dev";
-  defaultPrefixWithGw = true;
+  defaultGodwokenRpc = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
 }
 
-program
-  .option(
-    "-g, --godwoken-rpc <rpc>",
-    "godwoken rpc path, defualt to http://127.0.0.1:8119, and LUMOS_CONFIG_FILE not provided, default to http://godwoken-testnet-web3-rpc.ckbapp.dev",
-    defaultGodwokenRpc
-  )
-  .option(
-    "-w, --prefix-with-gw",
-    "prefix with `gw_` or not, , defualt to false, and LUMOS_CONFIG_FILE not provided, default to true",
-    defaultPrefixWithGw
-  );
+program.option(
+  "-g, --godwoken-rpc <rpc>",
+  "godwoken rpc path, defualt to http://127.0.0.1:8119, and LUMOS_CONFIG_FILE not provided, default to https://godwoken-testnet-web3-rpc.ckbapp.dev",
+  defaultGodwokenRpc
+);
 
 program
   .command("deposit")
@@ -34,7 +28,11 @@ program
   .requiredOption("-p, --private-key <privateKey>", "private key to use")
   .requiredOption("-c --capacity <capacity>", "capacity in shannons")
   .option("-r, --rpc <rpc>", "ckb rpc path", "http://127.0.0.1:8114")
-  .option("-d, --indexer-path <path>", "indexer path", "./indexer-data")
+  .option(
+    "-d, --indexer-path <path>",
+    `indexer path (default: "./indexer-data-path/<ckb genesis hash>")`,
+    undefined
+  )
   .option(
     "-l, --eth-address <args>",
     "Eth address (layer2 lock args, using --private-key value to calculate if not provided)"
@@ -48,7 +46,11 @@ program
   .requiredOption("-m --amount <amount>", "sudt amount")
   .requiredOption("-s --sudt-script-args <l1 sudt script args>", "sudt amount")
   .option("-r, --rpc <rpc>", "ckb rpc path", "http://127.0.0.1:8114")
-  .option("-d, --indexer-path <path>", "indexer path", "./indexer-data")
+  .option(
+    "-d, --indexer-path <path>",
+    `indexer path (default: "./indexer-data-path/<ckb genesis hash>")`,
+    undefined
+  )
   .option(
     "-l, --eth-address <args>",
     "Eth address (layer2 lock args, using --private-key value to calculate if not provided)"
@@ -65,10 +67,14 @@ program
     "capacity in shannons OR amount in sudt"
   )
   .requiredOption("-e, --fee <fee>", "fee")
-  .requiredOption("-t, --to-id <to id>", "to id")
+  .requiredOption("-t, --to <to>", "to short address OR to id")
   .requiredOption("-s, --sudt-id <sudt id>", "sudt id")
   .option("-r, --rpc <rpc>", "ckb rpc path", "http://127.0.0.1:8114")
-  .option("-d, --indexer-path <path>", "indexer path", "./indexer-data")
+  .option(
+    "-d, --indexer-path <path>",
+    `indexer path (default: "./indexer-data-path/<ckb genesis hash>")`,
+    undefined
+  )
   .action(transferRun);
 
 program
@@ -85,9 +91,15 @@ program
     "l1 sudt script hash, default for withdrawal CKB",
     "0x0000000000000000000000000000000000000000000000000000000000000000"
   )
-  .option("-m --amount <amount>", "amount of sudt", "0")
+  .option("-m, --amount <amount>", "amount of sudt", "0")
+  .option("-s, --fee-sudt-id <fee sudt id>", "fee sudt id", "1")
+  .option("-f, --fee <fee>", "fee in current sudt", "0")
   .option("-r, --rpc <rpc>", "ckb rpc path", "http://127.0.0.1:8114")
-  .option("-d, --indexer-path <path>", "indexer path", "./indexer-data")
+  .option(
+    "-d, --indexer-path <path>",
+    `indexer path (default: "./indexer-data-path/<ckb genesis hash>")`,
+    undefined
+  )
   .action(withdrawRun);
 
 program
@@ -95,13 +107,42 @@ program
   .description(
     "get CKB / sUDT balance from godwoken, default sudt-id is 1 (for CKB)"
   )
-  .requiredOption("-a, --account-id <account id>", "account id")
+  .requiredOption(
+    "-a, --account <account>",
+    "account short address OR account id"
+  )
   .option("-s, --sudt-id <sudt id>", "sudt id", "1")
   .action(getBalance);
 
 program
-  .command("get-sudt-script-args <privateKey>")
-  .description("Compute sudt token by owner from info(privateKey), return SUDT script args")
-  .action(getSudtScriptArgs)
+  .command("to-short-address")
+  .description("eth eoa address to godwoken short address")
+  .requiredOption("-a, --eth-address <eth address>", "eth eoa address")
+  .action(toShortAddress);
+
+program
+  .command("to-eth-address")
+  .description("godwoken short address to eth eoa address")
+  .requiredOption(
+    "-a, --short-address <short address>",
+    "godwoken short address"
+  )
+  .action(toEthAddress);
+
+program
+  .command("unlock")
+  .description("unlock withdrawal CKB / sUDT from godwoken")
+  .requiredOption("-p, --private-key <privateKey>", "private key to use")
+  .option(
+    "-s, --sudt-script-args <l1 sudt script args>",
+    "only for unlock sudt"
+  )
+  .option("-r, --rpc <rpc>", "ckb rpc path", "http://127.0.0.1:8114")
+  .option(
+    "-d, --indexer-path <path>",
+    `indexer path (default: "./indexer-data-path/<ckb genesis hash>")`,
+    undefined
+  )
+  .action(unlockRun);
 
 program.parse(process.argv);

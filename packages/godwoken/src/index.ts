@@ -16,6 +16,7 @@ import {
   Uint128,
   Uint32,
   Uint64,
+  Fee,
 } from "./types";
 import keccak256 from "keccak256";
 
@@ -64,123 +65,101 @@ function toArrayBuffer(buf: Buffer) {
 
 export class Godwoken {
   private rpc: RPC;
-  private prefixGw: boolean;
 
-  constructor(url: string, prefixGw = false) {
+  constructor(url: string) {
     this.rpc = new RPC(url);
-    this.prefixGw = prefixGw;
   }
 
-  async _send(l2tx: L2Transaction, method: any) {
+  private async rpcCall(method_name: string, ...args: any[]): Promise<any> {
+    const name = "gw_" + method_name;
+    const result = await this.rpc[name](...args);
+    return result;
+  }
+
+  async _send(l2tx: L2Transaction, method_name: string) {
     const data = new Reader(
       core.SerializeL2Transaction(NormalizeL2Transaction(l2tx))
     ).serializeJson();
-    return await method(data);
+    return await this.rpcCall(method_name, data);
   }
 
   async executeL2Transaction(l2tx: L2Transaction): Promise<RunResult> {
-    if (this.prefixGw) {
-      return this._send(l2tx, this.rpc.gw_execute_l2transaction);
-    }
-    return this._send(l2tx, this.rpc.execute_l2transaction);
+    return this._send(l2tx, "execute_l2transaction");
   }
 
   async submitL2Transaction(l2tx: L2Transaction): Promise<Hash> {
-    if (this.prefixGw) {
-      return this._send(l2tx, this.rpc.gw_submit_l2transaction);
-    }
-    return this._send(l2tx, this.rpc.submit_l2transaction);
+    return this._send(l2tx, "submit_l2transaction");
   }
 
   async executeRawL2Transaction(rawL2Tx: RawL2Transaction): Promise<RunResult> {
     const hex = new Reader(
       core.SerializeRawL2Transaction(NormalizeRawL2Transaction(rawL2Tx))
     ).serializeJson();
-    if (this.prefixGw) {
-      return await this.rpc.gw_execute_raw_l2transaction(hex);
-    }
-    return await this.rpc.execute_raw_l2transaction(hex);
+    return await this.rpcCall("execute_raw_l2transaction", hex);
   }
 
   async submitWithdrawalRequest(request: WithdrawalRequest): Promise<void> {
     const data = new Reader(
       core.SerializeWithdrawalRequest(NormalizeWithdrawalRequest(request))
     ).serializeJson();
-    if (this.prefixGw) {
-      return await this.rpc.gw_submit_withdrawal_request(data);
-    }
-    return await this.rpc.submit_withdrawal_request(data);
+    return await this.rpcCall("submit_withdrawal_request", data);
   }
 
-  async getBalance(sudt_id: Uint32, account_id: Uint32): Promise<Uint128> {
-    // TODO: maybe swap params later?
+  async getScriptHashByShortAddress(address: HexString): Promise<Hash> {
+    return await this.rpcCall("get_script_hash_by_short_address", address);
+  }
+
+  // TODO: maybe swap params later?
+  async getBalance(sudt_id: Uint32, address: HexString): Promise<Uint128> {
     const sudt_id_hex = `0x${(+sudt_id).toString(16)}`;
-    const account_id_hex = `0x${(+account_id).toString(16)}`;
-    const hex = this.prefixGw
-      ? await this.rpc.gw_get_balance(account_id_hex, sudt_id_hex)
-      : await this.rpc.get_balance(account_id_hex, sudt_id_hex);
-    return BigInt(hex);
+    const balance = await this.rpcCall("get_balance", address, sudt_id_hex);
+    return BigInt(balance);
+  }
+
+  async getBalanceById(sudt_id: Uint32, account_id: Uint32): Promise<Uint128> {
+    const scriptHash = await this.getScriptHash(account_id);
+    const address = scriptHash.slice(0, 42);
+    const balance = await this.getBalance(sudt_id, address);
+    return balance;
   }
 
   async getStorageAt(account_id: Uint32, key: Hash): Promise<Hash> {
     const account_id_hex = `0x${account_id.toString(16)}`;
-    if (this.prefixGw) {
-      return await this.rpc.gw_get_storage_at(account_id_hex, key);
-    }
-    return await this.rpc.get_storage_at(account_id_hex, key);
+    return await this.rpcCall("get_storage_at", account_id_hex, key);
   }
 
   async getAccountIdByScriptHash(
     script_hash: Hash
   ): Promise<Uint32 | undefined> {
-    const id = this.prefixGw
-      ? await this.rpc.gw_get_account_id_by_script_hash(script_hash)
-      : await this.rpc.get_account_id_by_script_hash(script_hash);
+    const id = await this.rpcCall("get_account_id_by_script_hash", script_hash);
     return id ? +id : undefined;
   }
 
   async getNonce(account_id: Uint32): Promise<Uint32> {
     const account_id_hex = `0x${account_id.toString(16)}`;
-    const nonce = this.prefixGw
-      ? await this.rpc.gw_get_nonce(account_id_hex)
-      : await this.rpc.get_nonce(account_id_hex);
+    const nonce = await this.rpcCall("get_nonce", account_id_hex);
     return parseInt(nonce);
   }
 
   async getScript(script_hash: Hash): Promise<Script> {
-    if (this.prefixGw) {
-      return await this.rpc.gw_get_script(script_hash);
-    }
-    return await this.rpc.get_script(script_hash);
+    return await this.rpcCall("get_script", script_hash);
   }
 
   async getScriptHash(account_id: Uint32): Promise<Hash> {
     const account_id_hex = `0x${account_id.toString(16)}`;
-    if (this.prefixGw) {
-      return await this.rpc.gw_get_script_hash(account_id_hex);
-    }
-    return await this.rpc.get_script_hash(account_id_hex);
+    return await this.rpcCall("get_script_hash", account_id_hex);
   }
 
   async getData(data_hash: Hash): Promise<HexString> {
-    if (this.prefixGw) {
-      return await this.rpc.gw_get_data(data_hash);
-    }
-    return await this.rpc.get_data(data_hash);
+    return await this.rpcCall("get_data", data_hash);
   }
 
   async hasDataHash(data_hash: Hash): Promise<boolean> {
-    if (this.prefixGw) {
-      return await this.rpc.gw_get_data_hash(data_hash);
-    }
-    return await this.rpc.get_data_hash(data_hash);
+    return await this.rpcCall("get_data_hash", data_hash);
   }
 
   async getTransactionReceipt(l2_tx_hash: Hash) {
-    if (this.prefixGw) {
-      return await this.rpc.gw_get_transaction_receipt(l2_tx_hash);
-    }
-    return await this.rpc.get_transaction_receipt(l2_tx_hash);
+    return await this.rpcCall("get_transaction_receipt", l2_tx_hash);
   }
 }
 
@@ -264,9 +243,17 @@ export class GodwokenUtils {
   static createAccountRawL2Transaction(
     from_id: Uint32,
     nonce: Uint32,
-    script: Script
+    script: Script,
+    sudt_id: Uint32 = 1,
+    fee_amount: Uint128 = BigInt(0)
   ): RawL2Transaction {
-    const create_account = { script };
+    const create_account = {
+      script,
+      fee: {
+        sudt_id: "0x" + (+sudt_id).toString(16),
+        amount: "0x" + BigInt(fee_amount).toString(16),
+      },
+    };
     const enum_tag = "0x00000000";
     const create_account_part = new Reader(
       core.SerializeCreateAccount(NormalizeCreateAccount(create_account))
@@ -289,7 +276,8 @@ export class GodwokenUtils {
     sell_amount: Uint128,
     sell_capacity: Uint64,
     owner_lock_hash: Hash,
-    payment_lock_hash: Hash
+    payment_lock_hash: Hash,
+    fee: Fee
   ): RawWithdrawalRequest {
     return {
       nonce: "0x" + BigInt(nonce).toString(16),
@@ -301,6 +289,7 @@ export class GodwokenUtils {
       sell_capacity: "0x" + BigInt(sell_capacity).toString(16),
       owner_lock_hash: owner_lock_hash,
       payment_lock_hash: payment_lock_hash,
+      fee,
     };
   }
 }

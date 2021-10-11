@@ -30,7 +30,9 @@ export async function withdrawCLI(
   sudtScriptHash: Hash,
   accountScriptHash: Hash,
   ownerLockHash: Hash,
-  privateKey: string
+  privateKey: string,
+  feeSudtId: number,
+  feeAmount: bigint
 ) {
   console.log("--- godwoken withdraw ---");
 
@@ -46,7 +48,11 @@ export async function withdrawCLI(
     BigInt(0),
     BigInt(100 * 10 ** 8),
     ownerLockHash,
-    "0x" + "0".repeat(64)
+    "0x" + "0".repeat(64),
+    {
+      sudt_id: feeSudtId,
+      amount: feeAmount,
+    }
   );
 
   // console.log("rawWithdrawalRequest:", rawWithdrawalRequest);
@@ -72,39 +78,34 @@ export async function withdrawCLI(
 
   console.log("withdrawalRequest:", withdrawalRequest);
 
-  try {
-    const result = await godwoken.submitWithdrawalRequest(withdrawalRequest);
-    console.log("result:", result);
+  const result = await godwoken.submitWithdrawalRequest(withdrawalRequest);
+  console.log("result:", result);
 
-    if (result !== null) {
-      const errorMessage = (result as any).message;
-      if (errorMessage !== undefined && errorMessage !== null) {
-        throw new Error(errorMessage);
-      }
+  if (result !== null) {
+    const errorMessage = (result as any).message;
+    if (errorMessage !== undefined && errorMessage !== null) {
+      throw new Error(errorMessage);
     }
-
-    console.log("--- godwoken withdraw finished ---");
-    return result;
-  } catch (e) {
-    console.error(e);
-    throw new Error("submit withdrawal request failed");
   }
+
+  console.log("--- godwoken withdraw finished ---");
+  return result;
 }
 
 export async function transferCLI(
   godwoken: Godwoken,
   privateKey: string,
   fromId: Uint32,
-  toId: Uint32,
+  toAddress: HexString,
   sudtId: Uint32,
   amount: Uint128,
   fee: Uint128
-) {
+): Promise<Hash> {
   console.log("--- godwoken sudt transfer ---");
   const nonce = await godwoken.getNonce(fromId);
 
   const sudtTransfer: SUDTTransfer = {
-    to: "0x" + toId.toString(16),
+    to: toAddress,
     amount: "0x" + amount.toString(16),
     fee: "0x" + fee.toString(16),
   };
@@ -159,18 +160,11 @@ export async function transferCLI(
 
   console.log("l2 transaction:", l2Transaction);
 
-  const runResult = await godwoken.submitL2Transaction(l2Transaction);
-  console.log("l2 tx hash:", runResult);
-
-  if (runResult !== null) {
-    const errorMessage: string | undefined = (runResult as any).message;
-    if (errorMessage) {
-      throw new Error(errorMessage);
-    }
-  }
+  const txHash = await godwoken.submitL2Transaction(l2Transaction);
+  console.log("l2 tx hash:", txHash);
 
   console.log("--- godwoken sudt transfer finished ---");
-  return;
+  return txHash;
 }
 
 function signMessage(message: string, privkey: string) {
@@ -202,6 +196,19 @@ export async function privateKeyToAccountId(
   return id;
 }
 
+export function privateKeyToShortAddress(
+  privateKey: HexString
+): HexString | undefined {
+  const ethAddress = privateKeyToEthAddress(privateKey);
+  const script = {
+    ...deploymentConfig.eth_account_lock,
+    args: ROLLUP_TYPE_HASH + ethAddress.slice(2),
+  };
+  const scriptHash = utils.computeScriptHash(script);
+  const shortAddress = scriptHash.slice(0, 42);
+  return shortAddress;
+}
+
 export function privateKeyToScriptHash(privateKey: HexString): Hash {
   const ethAddress = privateKeyToEthAddress(privateKey);
   const script = {
@@ -213,20 +220,6 @@ export function privateKeyToScriptHash(privateKey: HexString): Hash {
 
   return scriptHash;
 }
-
-// export function privateKeyToScriptHash(
-//   privateKey: HexString
-// ): Hash {
-//   const ethAddress = privateKeyToEthAddress(privateKey);
-//   const script = {
-//     ...deploymentConfig.eth_account_lock,
-//     args: ROLLUP_TYPE_HASH + ethAddress.slice(2),
-//   };
-
-//   const scriptHash = utils.computeScriptHash(script);
-
-//   return scriptHash;
-// }
 
 export function ethAddressToScriptHash(ethAddress: HexString): Hash {
   const script = {
@@ -244,11 +237,37 @@ export async function getBalanceByScriptHash(
   sudtId: number,
   scriptHash: Hash
 ): Promise<bigint> {
-  const accountId = await godwoken.getAccountIdByScriptHash(scriptHash);
-  if (!accountId) {
-    return BigInt(0);
+  const address = scriptHash.slice(0, 42);
+  const balance = await godwoken.getBalance(sudtId, address);
+  return balance;
+}
+
+export async function parseAccountToShortAddress(
+  godwoken: Godwoken,
+  account: string
+): Promise<HexString> {
+  // account is an address
+  if (account.startsWith("0x") && account.length === 42) {
+    return account;
   }
 
-  const balance = await godwoken.getBalance(sudtId, accountId);
-  return balance;
+  const accountId: number = +account;
+  const scriptHash: Hash = await godwoken.getScriptHash(accountId);
+  const shortAddress: HexString = scriptHash.slice(0, 42);
+  return shortAddress;
+}
+
+export async function parseAccountToId(
+  godwoken: Godwoken,
+  account: string
+): Promise<number | undefined> {
+  // if account is an address
+  if (account.startsWith("0x") && account.length === 42) {
+    const scriptHash = await godwoken.getScriptHashByShortAddress(account);
+    const id = await godwoken.getAccountIdByScriptHash(scriptHash);
+    return id;
+  }
+
+  // if account is id
+  return +account;
 }

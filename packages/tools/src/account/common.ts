@@ -10,7 +10,7 @@ import { Hash } from "@ckb-lumos/base";
 
 export async function initConfigAndSync(
   ckbRpc: string,
-  indexerPath: string
+  indexerPath: string | undefined
 ): Promise<Indexer> {
   if (!env.LUMOS_CONFIG_NAME && !env.LUMOS_CONFIG_FILE) {
     env.LUMOS_CONFIG_NAME = "AGGRON4";
@@ -22,6 +22,15 @@ export async function initConfigAndSync(
   }
 
   initializeConfig();
+
+  if (indexerPath == null) {
+    const rpc = new RPC(ckbRpc);
+    const ckbGenesisHeader = await rpc.get_header_by_number("0x0");
+    const ckbGenesisHash = ckbGenesisHeader.hash;
+    indexerPath = `./indexer-data-path/${ckbGenesisHash}`;
+  }
+
+  console.log("current indexer data path:", indexerPath);
 
   indexerPath = path.resolve(indexerPath);
   const indexer = new Indexer(ckbRpc, indexerPath);
@@ -85,14 +94,12 @@ export async function waitForDeposit(
       console.log("Your sudt id:", sudtId);
     }
 
-    const godwokenCkbBalance = await godwoken.getBalance(1, accountId);
+    const address = accountScriptHash.slice(0, 42);
+    const godwokenCkbBalance = await godwoken.getBalance(1, address);
     console.log(`ckb balance in godwoken is: ${godwokenCkbBalance}`);
     if (originBalance !== godwokenCkbBalance) {
       if (sudtId !== 1) {
-        const godwokenSudtBalance = await godwoken.getBalance(
-          sudtId!,
-          accountId
-        );
+        const godwokenSudtBalance = await godwoken.getBalance(sudtId!, address);
         console.log(`sudt balance in godwoken is: ${godwokenSudtBalance}`);
       }
       console.log(`deposit success!`);
@@ -128,7 +135,8 @@ export async function waitForWithdraw(
       console.log("Your account id:", accountId);
     }
 
-    const godwokenCkbBalance = await godwoken.getBalance(1, accountId);
+    const address = accountScriptHash.slice(0, 42);
+    const godwokenCkbBalance = await godwoken.getBalance(1, address);
     console.log(`ckb balance in godwoken is: ${godwokenCkbBalance}`);
     if (originBalance !== godwokenCkbBalance) {
       console.log(`withdrawal success!`);
@@ -139,5 +147,31 @@ export async function waitForWithdraw(
 
   console.log(
     `timeout for waiting withdraw success in godwoken, please check with account id: ${accountId} by your self.`
+  );
+}
+
+export async function waitForTransfer(
+  godwoken: Godwoken,
+  txHash: Hash,
+  timeout: number = 300,
+  loopInterval = 5
+) {
+  let receipt: any;
+  for (let i = 0; i < timeout; i += loopInterval) {
+    console.log(`waiting for layer 2 block producer transfer ... ${i} seconds`);
+
+    if (!receipt) {
+      receipt = await godwoken.getTransactionReceipt(txHash);
+      if (receipt) {
+        console.log("Transaction receipt:", receipt);
+        return;
+      }
+    }
+
+    await asyncSleep(loopInterval * 1000);
+  }
+
+  console.log(
+    `timeout for waiting transfer success in godwoken, please check with tx hash: ${txHash} by your self.`
   );
 }
