@@ -12,5 +12,5 @@
     "sourceMap": true,
     "resolveJsonModule": true
   },
-  "exclude": ["**/node_modules", "**/tests", "**/lib", "src/polyjuice-cli.ts"]
+  "exclude": ["**/node_modules", "**/tests", "**/lib"]
 }

@@ -7,12 +7,12 @@
     "types": ["node"],
     "lib": ["es2020"],
     "moduleResolution": "node",
-    // TODO: "strict": true,
+    "strict": true,
     "esModuleInterop": true,
     "sourceMap": true,
     // "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
+    // "noImplicitReturns": true,
+    // "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true
   },
   "exclude": ["**/node_modules", "**/tests", "**/lib"]
