@@ -7,7 +7,7 @@ import {
   withdrawCLI,
 } from "../modules/godwoken";
 import { ckbAddressToLockHash, privateKeyToEthAddress } from "../modules/utils";
-import { initConfigAndSync, waitForWithdraw } from "./common";
+import { initConfig, waitForWithdraw } from "./common";
 import { Godwoken } from "@godwoken-examples/godwoken";
 
 async function withdrawal(
@@ -42,18 +42,16 @@ async function withdrawal(
 }
 
 export const run = async (program: Command) => {
-  const ckbRpc = program.rpc;
-  const indexerPath = program.indexerPath;
-  const _indexer = await initConfigAndSync(ckbRpc, indexerPath);
-
   const feeSudtId = +program.feeSudtId;
   const feeAmount = BigInt(program.fee);
 
   const capacity = program.capacity;
   const amount = program.amount;
   const sudtScriptHash = program.sudtScriptHash;
-  // const ownerLockHash = program.ownerLockHash;
   const ownerCkbAddress = program.ownerCkbAddress;
+
+  initConfig();
+
   const ownerLockHash = ckbAddressToLockHash(ownerCkbAddress);
   console.log("owner lock hash:", ownerLockHash);
 

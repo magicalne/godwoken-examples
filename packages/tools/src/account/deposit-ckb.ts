@@ -3,7 +3,7 @@ import {
   deploymentConfig,
 } from "../modules/deployment-config";
 import { HexString, Cell, Script, Hash, utils } from "@ckb-lumos/base";
-import { Indexer } from "@ckb-lumos/indexer";
+import { Indexer } from "@ckb-lumos/base";
 import {
   TransactionSkeleton,
   parseAddress,
@@ -55,7 +55,10 @@ async function sendTx(
     layer2Lock
   );
   const l2ScriptHash = utils.computeScriptHash(depositLockArgs.layer2_lock);
-  console.log(`Godwoken script hash: ${l2ScriptHash}`);
+  
+  if (process.env.DEBUG) {
+    console.log(`Layer 2 lock script hash: ${l2ScriptHash}`);
+  }
 
   console.log("Godwoken script hash(160):", l2ScriptHash.slice(0, 42));
 
@@ -65,7 +68,9 @@ async function sendTx(
     serializedArgs
   );
 
-  // console.log("deposit lock:", depositLock);
+  if (process.env.DEBUG) {
+    console.log("deposit lock:", depositLock);
+  }
 
   const outputCell: Cell = {
     cell_output: {
@@ -111,10 +116,17 @@ async function sendTx(
   return txHash;
 }
 
+const MINIMUM_DEPOSIT_CAPACITY = 500n * 100000000n;
+
 export const run = async (program: commander.Command) => {
   const ckbRpc = new RPC(program.rpc);
-  const indexerPath = program.indexerPath;
-  const indexer = await initConfigAndSync(program.rpc, indexerPath);
+  const ckbIndexerURL = program.indexer;
+
+  if (BigInt(program.capacity) < MINIMUM_DEPOSIT_CAPACITY) {
+    throw new Error(`Minimum deposit capacity required: ${MINIMUM_DEPOSIT_CAPACITY}.`);
+  }
+
+  const indexer = await initConfigAndSync(program.rpc, ckbIndexerURL);
 
   const privateKey = program.privateKey;
   const ckbAddress = privateKeyToCkbAddress(privateKey);
@@ -122,7 +134,10 @@ export const run = async (program: commander.Command) => {
 
   const godwoken = new Godwoken(program.parent.godwokenRpc);
 
-  console.log("using eth address:", ethAddress);
+  console.log("Using ETH address:", ethAddress);
+  console.log("Using CKB address:", ckbAddress);
+  console.log(`Rollup type hash: ${getRollupTypeHash()}`);
+
   try {
     const accountScriptHash = ethAddressToScriptHash(ethAddress);
     const currentBalance = await getBalanceByScriptHash(

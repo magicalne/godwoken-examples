@@ -1,6 +1,6 @@
 import { initializeConfig } from "@ckb-lumos/config-manager";
 import path from "path";
-import { Indexer } from "@ckb-lumos/indexer";
+import { CkbIndexer } from './indexer-remote';
 import { env } from "process";
 import { RPC } from "ckb-js-toolkit";
 import { Godwoken } from "@godwoken-examples/godwoken";
@@ -8,10 +8,75 @@ import { Godwoken } from "@godwoken-examples/godwoken";
 import { asyncSleep } from "../modules/utils";
 import { Hash } from "@ckb-lumos/base";
 
-export async function initConfigAndSync(
-  ckbRpc: string,
-  indexerPath: string | undefined
-): Promise<Indexer> {
+async function indexerReady(indexer: any, updateProgress=((_indexerTip: bigint, _rpcTip: bigint)=>{}), options: any)
+{
+	const defaults = {blockDifference: 0, timeoutMs: 300_000, recheckMs: 500};
+	options = {...defaults, ...options};
+
+	return new Promise(async (resolve, reject) =>
+	{
+		let timedOut = false;
+		const timeoutTimer = (options.timeoutMs !== 0) ? setTimeout(()=>{timedOut = true;}, options.timeoutMs) : false;
+		const rpc = new RPC(indexer.uri);
+
+		let indexerFailureCount = 0;
+		let rpcFailureCount = 0;
+
+		while(true)
+		{
+			if(timedOut)
+				return reject(Error("Transaction timeout."));
+
+      let indexerTipObj: any = null;
+
+      try {
+			  indexerTipObj = await indexer.tip();
+      } catch (error) {
+        console.error(error?.message);
+
+        throw new Error(`Can't connect to ckb-indexer. Please make sure ckb-indexer is running and its URL is valid and reachable. Make sure the URL begins with http:// or https://.`);
+      }
+
+      if(!indexerTipObj)
+			{
+				if(++indexerFailureCount >= 5)
+					return reject(Error("Indexer gave an unexpected response."));
+
+				await new Promise((resolve)=>setTimeout(resolve, 1000));
+				continue;
+			}
+			
+			const rpcResponse = await rpc.get_tip_block_number();
+			if(!rpcResponse)
+			{
+				if(++rpcFailureCount >= 5)
+					return reject(Error("RPC gave an unexpected response."));
+
+				await new Promise((resolve)=>setTimeout(resolve, 1000));
+				continue;
+			}
+	
+			const indexerTip = BigInt(indexerTipObj.block_number);
+			const rpcTip = BigInt(rpcResponse);
+
+			if(indexerTip >= (rpcTip - BigInt(options.blockDifference)))
+			{
+				if(timeoutTimer)
+					clearTimeout(timeoutTimer);
+
+				break;
+			}
+
+			updateProgress(indexerTip, rpcTip);
+
+			await new Promise(resolve=>setTimeout(resolve, options.recheckMs));
+		}
+
+		return resolve(null);
+	});
+}
+
+export function initConfig() {
   if (!env.LUMOS_CONFIG_NAME && !env.LUMOS_CONFIG_FILE) {
     env.LUMOS_CONFIG_NAME = "AGGRON4";
     console.log("LUMOS_CONFIG_NAME:", env.LUMOS_CONFIG_NAME);
@@ -22,23 +87,29 @@ export async function initConfigAndSync(
   }
 
   initializeConfig();
+}
 
-  if (indexerPath == null) {
-    const rpc = new RPC(ckbRpc);
-    const ckbGenesisHeader = await rpc.get_header_by_number("0x0");
-    const ckbGenesisHash = ckbGenesisHeader.hash;
-    indexerPath = `./indexer-data-path/${ckbGenesisHash}`;
-  }
+export async function initConfigAndSync(
+  ckbRpc: string,
+  ckbIndexerUrl: string
+): Promise<CkbIndexer> {
+  initConfig();
 
-  console.log("current indexer data path:", indexerPath);
+  const indexer = new CkbIndexer(ckbRpc, ckbIndexerUrl);
 
-  indexerPath = path.resolve(indexerPath);
-  const indexer = new Indexer(ckbRpc, indexerPath);
-  indexer.startForever();
-
-  console.log("waiting for sync ...");
-  await indexer.waitForSync();
-  console.log("synced ...");
+  console.log("Indexer is syncing. Please wait...");
+  let lastMessage = '';
+	await indexerReady(indexer, (indexerTip: bigint, rpcTip: bigint)=>
+    {
+      const newMessage = `Syncing ${Math.floor(Number(indexerTip)/Number(rpcTip)*10_000)/100}% completed.`;
+      if (lastMessage !== newMessage) {
+        console.log(newMessage);
+        lastMessage = newMessage;
+      }
+    },
+    {timeoutMs: 0, recheckMs: 800}
+  );
+  console.log("Indexer synchronized.");
   return indexer;
 }
 
@@ -46,7 +117,7 @@ export async function waitTxCommitted(
   txHash: string,
   ckbRpc: RPC,
   timeout: number = 300,
-  loopInterval = 3
+  loopInterval = 10
 ) {
   for (let index = 0; index < timeout; index += loopInterval) {
     const txWithStatus = await ckbRpc.get_transaction(txHash);
@@ -67,13 +138,18 @@ export async function waitForDeposit(
   originBalance: bigint,
   sudtScriptHash?: Hash, // if undefined, sudt id = 1
   timeout: number = 300,
-  loopInterval = 5
+  loopInterval = 10
 ) {
   let accountId = undefined;
   let sudtId: number | undefined = 1;
+
+  if (sudtId === 1) {
+    console.log(`CKB balance in Godwoken is: ${originBalance} Shannons.`);
+  }
+
   for (let i = 0; i < timeout; i += loopInterval) {
     console.log(
-      `waiting for layer 2 block producer collect the deposit cell ... ${i} seconds`
+      `Waiting for Layer 2 block producer to collect the deposit cell ... ${i} seconds.`
     );
 
     if (!accountId) {
@@ -91,25 +167,27 @@ export async function waitForDeposit(
         await asyncSleep(loopInterval * 1000);
         continue;
       }
-      console.log("Your sudt id:", sudtId);
+      console.log("Your sUDT id:", sudtId);
     }
 
     const address = accountScriptHash.slice(0, 42);
     const godwokenCkbBalance = await godwoken.getBalance(1, address);
-    console.log(`ckb balance in godwoken is: ${godwokenCkbBalance}`);
+
     if (originBalance !== godwokenCkbBalance) {
+      console.log(`CKB balance in Godwoken is: ${godwokenCkbBalance} Shannons.`);
+
       if (sudtId !== 1) {
         const godwokenSudtBalance = await godwoken.getBalance(sudtId!, address);
-        console.log(`sudt balance in godwoken is: ${godwokenSudtBalance}`);
+        console.log(`sUDT balance in Godwoken is: ${godwokenSudtBalance}.`);
       }
-      console.log(`deposit success!`);
+      console.log(`Deposit success!`);
       return;
     }
     await asyncSleep(loopInterval * 1000);
   }
 
   console.log(
-    `timeout for waiting deposit success in godwoken, please check with account id: ${accountId} by your self.`
+    `Timeout for waiting deposit success in Godwoken, please check with account id: ${accountId} by yourself.`
   );
 }
 
@@ -154,7 +232,7 @@ export async function waitForTransfer(
   godwoken: Godwoken,
   txHash: Hash,
   timeout: number = 300,
-  loopInterval = 5
+  loopInterval = 10
 ) {
   let receipt: any;
   for (let i = 0; i < timeout; i += loopInterval) {

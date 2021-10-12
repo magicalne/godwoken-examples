@@ -3,7 +3,7 @@ import {
   deploymentConfig,
 } from "../modules/deployment-config";
 import { HexString, Script, Hash, utils, Cell } from "@ckb-lumos/base";
-import { Indexer } from "@ckb-lumos/indexer";
+import { Indexer } from "@ckb-lumos/base";
 import {
   TransactionSkeleton,
   parseAddress,
@@ -32,6 +32,8 @@ import {
   getBalanceByScriptHash,
   ethAddressToScriptHash,
 } from "../modules/godwoken";
+
+const DEBUG = process.env.DEBUG;
 
 async function sendTx(
   godwoken: Godwoken,
@@ -96,7 +98,8 @@ async function sendTx(
   const sudtScriptHash = utils.computeScriptHash(
     txSkeleton.get("outputs").get(0)!.cell_output.type!
   );
-  console.log(`Layer 1 sudt script hash:`, sudtScriptHash);
+
+  console.log(`Layer 1 sUDT script hash:`, sudtScriptHash);
 
   const scriptHash = await godwoken.getScriptHash(1);
   const script = await godwoken.getScript(scriptHash);
@@ -105,10 +108,17 @@ async function sendTx(
     hash_type: script.hash_type,
     args: getRollupTypeHash() + sudtScriptHash.slice(2),
   };
-  console.log("layer 2 sudt script:", layer2SudtScript);
+
+  if (DEBUG) {
+    console.log("Layer 2 sUDT script:", layer2SudtScript);
+  }
+
   const layer2SudtScriptHash = utils.computeScriptHash(layer2SudtScript);
-  console.log(`Layer 2 sudt script hash:`, layer2SudtScriptHash);
-  console.log("↑ Using this script hash to get sudt account id ↑");
+
+  if (DEBUG) {
+    console.log(`Layer 2 sUDT script hash:`, layer2SudtScriptHash);
+    console.log("↑ Using this script hash to get sudt account id ↑");
+  }
 
   txSkeleton = await common.payFeeByFeeRate(
     txSkeleton,
@@ -129,17 +139,24 @@ async function sendTx(
   return [txHash, layer2SudtScriptHash];
 }
 
+const MINIMUM_DEPOSIT_CAPACITY = 500n * 100000000n;
+
 export const run = async (program: commander.Command) => {
   const ckbRpc = new RPC(program.rpc);
-  const indexerPath = program.indexerPath;
-  const indexer = await initConfigAndSync(program.rpc, indexerPath);
+  const ckbIndexerURL = program.indexer;
+
+  const capacity: bigint = BigInt(program.capacity);
+  if (capacity < MINIMUM_DEPOSIT_CAPACITY) {
+    throw new Error(`Minimum deposit capacity required: ${MINIMUM_DEPOSIT_CAPACITY}.`);
+  }
+
+  const indexer = await initConfigAndSync(program.rpc, ckbIndexerURL);
 
   const privateKey = program.privateKey;
   const ckbAddress = privateKeyToCkbAddress(privateKey);
   const ethAddress = program.ethAddress || privateKeyToEthAddress(privateKey);
-  console.log("using eth address:", ethAddress);
-
-  const capacity: bigint = BigInt(program.capacity);
+  console.log("Using ETH address:", ethAddress);
+  console.log("Using CKB address:", ckbAddress);
 
   const godwokenRpc = program.parent.godwokenRpc;
   const godwoken = new Godwoken(godwokenRpc);
