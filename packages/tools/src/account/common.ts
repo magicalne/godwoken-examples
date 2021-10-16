@@ -120,14 +120,19 @@ export async function waitTxCommitted(
   loopInterval = 10
 ) {
   for (let index = 0; index < timeout; index += loopInterval) {
-    const txWithStatus = await ckbRpc.get_transaction(txHash);
-    const status = txWithStatus.tx_status.status;
-    console.log(`tx ${txHash} is ${status}, waited for ${index} seconds`);
-    await asyncSleep(loopInterval * 1000);
-    if (status === "committed") {
-      console.log(`tx ${txHash} is committed!`);
-      return;
-    }
+    try {
+      const txWithStatus = await ckbRpc.get_transaction(txHash);
+      const status = txWithStatus.tx_status.status;
+      console.log(`tx ${txHash} is ${status}, waited for ${index} seconds`);
+      await asyncSleep(loopInterval * 1000);
+      if (status === "committed") {
+        console.log(`tx ${txHash} is committed!`);
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      await asyncSleep(loopInterval * 1000);
+    }  
   }
   throw new Error(`tx ${txHash} not committed in ${timeout} seconds`);
 }
