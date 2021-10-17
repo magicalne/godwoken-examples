@@ -42,6 +42,7 @@ async function unlock(
   try {
     for (let i = 0; i < retryTime; i++) {
       if (i > 0) {
+        await asyncSleep(6000);
         console.log("-".repeat(15) + ` Retry ${i} ` + "-".repeat(15));
       }
 
