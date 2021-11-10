@@ -20,7 +20,7 @@ const ETH_ACCOUNT_LOCK_CODE_HASH = configJson.web3_indexer.eth_account_lock_hash
 const POLYJUICE_CONTRACT_CODE_HASH = configJson.web3_indexer.polyjuice_script_type_hash;
 
 const CREATOR_ACCOUNT_ID = 3;
-const DEPLOYER_PRIVATE_KEY = "bdb4474bdd46bf9897accc60c5eb945793e7a3d321bf3b70c30295ceb3433f28";
+const DEPLOYER_PRIVATE_KEY = "6cd5e7be2f6504aa5ae7c0c04178d8f47b7cfc63b71d95d9e6282f5b090431bf";
 const SIGNER_PRIVATE_KEYS = "bdb4474bdd46bf9897accc60c5eb945793e7a3d321bf3b70c30295ceb3433f28,f2d929da616e74fe61bbf5a87a910ac60cfd300d2011bd6212b84ddedddce8ea";
 const RPC_URL = "http://localhost:8024";
 const GODWOKEN_API_URL = "http://localhost:6101";
