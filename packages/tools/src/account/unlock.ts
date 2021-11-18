@@ -58,6 +58,7 @@ async function unlock(
   }
 }
 
+const withdrawal_cells: any[] = [];
 /**
  *
  * @param privateKey
@@ -77,8 +78,6 @@ async function unlockInner(
   const rollup_type_hash: Hash = ROLLUP_TYPE_HASH;
   console.log("rollup_type_hash:", rollup_type_hash);
 
-  const withdrawalLockDep: CellDep = deploymentConfig.withdrawal_lock_dep;
-
   const ckb_address = privateKeyToCkbAddress(privateKey);
   console.log("CKB address:", ckb_address);
 
@@ -88,9 +87,9 @@ async function unlockInner(
   // Ready to build L1 CKB transaction
 
   // * search rollup cell then get last_finalized_block_number from cell data (GlobalState)
-  const rollupCells = await indexer.getCells({
-      script: rollup_type_script,
-      script_type: ScriptType.type
+  let rollupCells = await indexer.getCells({
+    script: rollup_type_script,
+    script_type: ScriptType.type
   });
 
   let rollup_cell: Cell | undefined = undefined;
@@ -110,12 +109,6 @@ async function unlockInner(
 
   console.log("last_finalized_block_number", last_finalized_block_number);
 
-  // * use rollup cell's out point as cell_deps
-  const rollup_cell_dep: CellDep = {
-    out_point: rollup_cell.out_point!,
-    dep_type: "code",
-  };
-
   // * search withdrawal locked cell by:
   //   - withdrawal lock code hash
   //   - owner secp256k1 blake2b160 lock hash
@@ -124,17 +117,19 @@ async function unlockInner(
   const withdrawal_lock = deploymentConfig.withdrawal_lock;
   const withdrawalCollector = indexer.collector({
     lock: {
-        code_hash: withdrawal_lock.code_hash,
-        hash_type: withdrawal_lock.hash_type,
-        args: rollup_type_hash, // prefix search
+      code_hash: withdrawal_lock.code_hash,
+      hash_type: withdrawal_lock.hash_type,
+      args: rollup_type_hash, // prefix search
     },
     type: sudtScript ? sudtScript : "empty",
     argsLen: "any",
+    // skip: 4000000,
   });
 
-  const withdrawal_cells = [];
+  console.log("searching withdrawal_cells...");
   for await (const cell of withdrawalCollector.collect()) {
-    // console.log("[DEBUG]: withdrawalCell:", cell.out_point);
+    if (withdrawal_cells.length > 0) break;
+
     const lock_args = cell.cell_output.lock.args;
     const withdrawal_lock_args_data = "0x" + lock_args.slice(66);
     const withdrawal_lock_args = new core.WithdrawalLockArgs(
@@ -144,20 +139,16 @@ async function unlockInner(
       withdrawal_lock_args.getOwnerLockHash().raw()
     ).serializeJson();
     if (owner_lock_hash !== lock_script_hash) {
-      // console.log(
-      //   `[INFO]: owner_lock_hash not match, expected: ${lock_script_hash}, actual: ${owner_lock_hash}`
-      // );
       continue;
     }
 
-    console.log("[DEBUG]: withdrawalCell:", cell);
-
+    console.debug("[DEBUG]: withdrawalCell:", cell);
     const withdrawal_block_number = withdrawal_lock_args
       .getWithdrawalBlockNumber()
       .toLittleEndianBigUint64();
     console.log("withdrawal_block_number", withdrawal_block_number);
     if (withdrawal_block_number > last_finalized_block_number) {
-      console.log("[INFO]: withdrawal cell not finalized");
+      console.debug("[INFO] This withdrawal cell is not finalized.");
       continue;
     }
 
@@ -167,9 +158,9 @@ async function unlockInner(
     console.warn("[ERROR]: No valid withdrawal cell found");
     exit(-1);
   }
-  console.log(
-    `[INFO] found ${withdrawal_cells.length} withdrawal cells, only process first one`
-  );
+  // console.log(
+  //   `[INFO] found ${withdrawal_cells.length} withdrawal cells, only process first one`
+  // );
   const withdrawal_cell = withdrawal_cells[0];
   const output_cell: Cell = {
     cell_output: {
@@ -200,6 +191,23 @@ async function unlockInner(
     )
   ).serializeJson();
 
+  // fetch rollup cell again
+  await indexer.waitForSync();
+  rollupCells = await indexer.getCells({
+    script: rollup_type_script,
+    script_type: ScriptType.type
+  });
+  if (rollupCells.length === 0) {
+    console.error("[ERROR]: rollup_cell not found");
+    exit(-1);
+  }
+  rollup_cell = rollupCells[0];
+  // use rollup cell's out point as cell_deps
+  const rollup_cell_dep: CellDep = {
+    out_point: rollup_cell.out_point!,
+    dep_type: "code",
+  };
+
   let txSkeleton = TransactionSkeleton({ cellProvider: indexer });
   txSkeleton = txSkeleton
     .update("inputs", (inputs) => {
@@ -209,7 +217,7 @@ async function unlockInner(
       return outputs.push(output_cell);
     })
     .update("cellDeps", (cell_deps) => {
-      return cell_deps.push(withdrawalLockDep);
+      return cell_deps.push(deploymentConfig.withdrawal_lock_dep);
     })
     .update("cellDeps", (cell_deps) => {
       return cell_deps.push(rollup_cell_dep);
@@ -236,26 +244,38 @@ async function unlockInner(
     BigInt(1000)
   );
   txSkeleton = common.prepareSigningEntries(txSkeleton);
-  // console.log("tx:", JSON.stringify(txSkeleton.toJS(), null, 2))
+  // console.debug("tx:", JSON.stringify(txSkeleton.toJS(), null, 2))
 
   const message: HexString = txSkeleton.get("signingEntries").get(0)!.message;
   const content: HexString = key.signRecoverable(message, privateKey);
   const tx = sealTransaction(txSkeleton, [content]);
 
-  let txHash: Hash | undefined;
-  try {
-    txHash = await rpc.send_transaction(tx, "passthrough");
-    console.log("txHash:", txHash);
-  } catch (err) {
-    console.error("error when send transaction:", err);
-    return true;
-  }
+  let txHash: Hash | undefined = await retry(async function sendUnlockTransaction() {
+    return rpc.send_transaction(tx, "passthrough");
+  }).catch(e => { return undefined; })
+  console.log("txHash:", txHash);
+  if (!txHash) return true; /* return true to external unlock function */
 
   const isSuccess = await waitForTxCommitted(rpc, tx, txHash);
   if (isSuccess === false) {
     return true;
   }
   return false;
+}
+
+const wait = (interval: any) => new Promise(resolve => setTimeout(resolve, interval));
+async function retry<T>(fn: () => Promise<T>, retriesLeft = 3, interval = 2000): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.warn(error);
+    console.log("===============================================");
+    if (retriesLeft === 0) {
+      throw new Error(`Max retries reached for function ${fn.name}`);
+    }
+    await wait(interval);
+    return await retry(fn, --retriesLeft, interval);
+  }
 }
 
 async function waitForTxCommitted(
@@ -296,16 +316,14 @@ async function waitForTxCommitted(
     }
 
     const status = txWithStatus.tx_status.status;
-    if (status !== "committed") {
-      console.log(
-        `current tx status: ${status}, ... waiting for ${i} seconds`,
-        status
-      );
-      await asyncSleep(loopInterval * 1000);
-    } else {
+
+    if (status === "committed") {
       console.log(`tx ${txHash} committed!`);
       return true;
     }
+    console.log(`current tx status: ${status}, waiting for ${i} seconds`, status);
+    if (status === "rejected") return false;
+    await asyncSleep(loopInterval * 1000);
   }
 
   console.log(`... timeout ... please check tx ${txHash} status by your self`);
