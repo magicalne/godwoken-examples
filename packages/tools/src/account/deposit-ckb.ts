@@ -32,7 +32,7 @@ import {
   ethAddressToScriptHash,
 } from "../modules/godwoken";
 
-async function sendTx(
+export async function sendTx(
   deploymentConfig: DeploymentConfig,
   fromAddress: string,
   amount: string,

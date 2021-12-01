@@ -75,7 +75,9 @@ async function indexerReady(indexer: any, updateProgress=((_indexerTip: bigint, 
 		return resolve(null);
 	});
 }
-
+/**
+ * init lumos config
+ */
 export function initConfig() {
   if (!env.LUMOS_CONFIG_NAME && !env.LUMOS_CONFIG_FILE) {
     env.LUMOS_CONFIG_NAME = "AGGRON4";

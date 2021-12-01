@@ -41,3 +41,17 @@ export function ckbAddressToLockHash(address: Address): HexString {
 export async function asyncSleep(ms = 0) {
   return new Promise((r) => setTimeout(r, ms));
 }
+
+export async function retry<T>(fn: () => Promise<T>, retriesLeft = 3, interval = 2000): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.warn(error);
+    console.log("=".repeat(80));
+    if (retriesLeft === 0) {
+      throw new Error(`Max retries reached for function ${fn.name}`);
+    }
+    await asyncSleep(interval);
+    return await retry(fn, --retriesLeft, interval);
+  }
+}

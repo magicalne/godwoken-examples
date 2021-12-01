@@ -10,7 +10,7 @@ import { ckbAddressToLockHash, privateKeyToEthAddress } from "../modules/utils";
 import { initConfig, waitForWithdraw } from "./common";
 import { Godwoken } from "@godwoken-examples/godwoken";
 
-async function withdrawal(
+export async function withdrawal(
   godwoken: Godwoken,
   privateKey: string,
   capacity: string,
