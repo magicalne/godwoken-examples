@@ -6,10 +6,9 @@ import { ethAddressToScriptHash, getBalanceByScriptHash } from "../modules/godwo
 import { ckbAddressToLockHash, privateKeyToCkbAddress, privateKeyToEthAddress } from "../modules/utils";
 import { privKeys } from "./accounts";
 
-const ckbRpcUrl = "https://testnet.ckbapp.dev/rpc";
-
 const testnetGodwokenRpcUrl = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
-const godwoken = new Godwoken(testnetGodwokenRpcUrl);
+const alphanetWeb3RpcUrl = "https://rpc-staging.godwoken.io";
+const godwoken = new Godwoken(alphanetWeb3RpcUrl);
 
 async function batchWithdrawals(privKeys: string[]) {
   initConfig();
@@ -63,5 +62,5 @@ async function batchWithdrawals(privKeys: string[]) {
   const args = process.argv.slice(2);
   console.log(`\t Using accounts[0..${args[0]}]`);
 
-  batchWithdrawals(privKeys.slice(0, Number(args[0])));
+  batchWithdrawals(privKeys.reverse().slice(0, Number(args[0])));
 })();

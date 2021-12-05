@@ -1,4 +1,4 @@
-import { normalizers, Reader } from "ckb-js-toolkit";
+import { normalizers, Reader, RPC } from "ckb-js-toolkit";
 import { core as base_core, Script, utils } from "@ckb-lumos/base";
 import { scriptToAddress } from "@ckb-lumos/helpers";
 import { getConfig } from "@ckb-lumos/config-manager";
@@ -10,7 +10,17 @@ import {
 import * as secp256k1 from "secp256k1";
 const keccak256 = require("keccak256");
 
-export const CKB_SUDT_ID = 1; 
+export enum GodwokenNetwork {
+  alphanet = 'alphanet',
+  testnet = 'testnet',
+}
+
+export const CKB_SUDT_ID = 1;
+export const testnetGodwokenRpcUrl = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
+export const alphanetWeb3RpcUrl = "https://rpc-staging.ckbapp.dev";
+export const testnetCkbRpcUrl = "https://testnet.ckbapp.dev/rpc";
+export const testnetCkbIndexerURL = "https://testnet.ckbapp.dev/indexer";
+export const testnetCkbRpc = new RPC(testnetCkbRpcUrl);
 
 export function generateLockScript(privateKey: any) {
   const privateKeyBuffer = new Reader(privateKey).toArrayBuffer();
