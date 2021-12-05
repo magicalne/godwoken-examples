@@ -4,6 +4,7 @@ import { privateKeyToCkbAddress } from "../modules/utils";
 import { privKeys } from "./accounts";
 
 (async () => {
+  // init testnet LUMOS_CONFIG
   initConfig();
 
   const browser = await puppeteer.launch({ headless: true });
