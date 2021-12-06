@@ -63,7 +63,6 @@ async function batchDeposits(
       );
       console.log("Transaction hash:", txHash);
       console.log("--------- wait for deposit transaction ----------");
-
       await waitTxCommitted(txHash, testnetCkbRpc);
       await waitForDeposit(godwokenRPC, accountScriptHash, currentBalance);
     }, 6, 10000);
@@ -75,7 +74,10 @@ async function batchDeposits(
  */
 (function runTest() {
   const args = process.argv.slice(2);
-  console.log(`\t Using accounts[0..${args[0]}]`);
+  const endIdx = args[0] || privKeys.length;
+  console.log(`\t Using accounts[0..${endIdx}]`);
   
-  batchDeposits(GodwokenNetwork.alphanet, privKeys.slice(0, Number(args[0])), false, 120000000000n);
+  batchDeposits(GodwokenNetwork.alphanet,
+                privKeys.slice(0, Number(endIdx)),
+                false, 500000000000n);
 })();

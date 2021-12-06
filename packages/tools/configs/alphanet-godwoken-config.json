@@ -1,0 +1,224 @@
+{
+  "node_mode": "fullnode",
+  "backends": [
+    {
+      "validator_path": "/scripts/godwoken-scripts/meta-contract-validator",
+      "generator_path": "/scripts/godwoken-scripts/meta-contract-generator",
+      "validator_script_type_hash": "0xd6d4b52ed2882cb0b2e1f802817c0ab05bd27da89a41ceddb25e0e347689ce69"
+    },
+    {
+      "validator_path": "/scripts/godwoken-scripts/sudt-validator",
+      "generator_path": "/scripts/godwoken-scripts/sudt-generator",
+      "validator_script_type_hash": "0xb6d6a2882d3d08cea565047bfe901cb2afe0cb790ea5e1b61e0532ef237c4a02"
+    },
+    {
+      "validator_path": "/scripts/godwoken-polyjuice/validator",
+      "generator_path": "/scripts/godwoken-polyjuice/generator_log",
+      "validator_script_type_hash": "0xbeb77e49c6506182ec0c02546aee9908aafc1561ec13beb488d14184c6cd1b79"
+    }
+  ],
+  "genesis": {
+    "timestamp": 1638680786318,
+    "rollup_type_hash": "0x27c8b9a5345d4004b86d5a2daa3ae44a7c261a8e3f7953fd54b1421146d043bf",
+    "meta_contract_validator_type_hash": "0xd6d4b52ed2882cb0b2e1f802817c0ab05bd27da89a41ceddb25e0e347689ce69",
+    "rollup_config": {
+      "l1_sudt_script_type_hash": "0xc5e5dcf215925f7ef4dfaf5f4b4f105bc321c02776d6e7d52a1db3fcd9d011a4",
+      "custodian_script_type_hash": "0x50fde68430caf9b2cb856cdecf9f35ea46f369ec02aa88d3237ca88620193fa0",
+      "deposit_script_type_hash": "0x5a2506bb68d81a11dcadad4cb7eae62a17c43c619fe47ac8037bc8ce2dd90360",
+      "withdrawal_script_type_hash": "0x170ef156e9f6132dbca6069dfd3e436f7d91c29d3ac7332c4b33e633b6a299b5",
+      "challenge_script_type_hash": "0xb761c2e77a9f7090ccb9d864ca6136e883257498230fb096ccbfd56e30c142f4",
+      "stake_script_type_hash": "0xf56d2feb9b534b5de517ea1d45d2e1719913a5df668b5a708f7bc45b7adeceb4",
+      "l2_sudt_validator_script_type_hash": "0xb6d6a2882d3d08cea565047bfe901cb2afe0cb790ea5e1b61e0532ef237c4a02",
+      "burn_lock_hash": "0x77c93b0632b5b6c3ef922c5b7cea208fb0a7c427a13d50e13d3fefad17e0c590",
+      "required_staking_capacity": "0x1dcd6500",
+      "challenge_maturity_blocks": "0xa",
+      "finality_blocks": "0x5",
+      "reward_burn_rate": "0x32",
+      "allowed_eoa_type_hashes": [
+        "0xdeec13a7b8e100579541384ccaf4b5223733e4a5483c3aec95ddc4c1d5ea5b22",
+        "0x28380fadb43a6f139d61a2509b69ecd2fbb2f61847ef6d39371b4f906c151ab5"
+      ],
+      "allowed_contract_type_hashes": [
+        "0xd6d4b52ed2882cb0b2e1f802817c0ab05bd27da89a41ceddb25e0e347689ce69",
+        "0xb6d6a2882d3d08cea565047bfe901cb2afe0cb790ea5e1b61e0532ef237c4a02",
+        "0xbeb77e49c6506182ec0c02546aee9908aafc1561ec13beb488d14184c6cd1b79"
+      ]
+    },
+    "secp_data_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x8f8c79eb6671709633fe6a46de93c0fedc9c1b8a6527a18d3983879542635c9f",
+        "index": "0x3"
+      }
+    }
+  },
+  "chain": {
+    "skipped_invalid_block_list": [],
+    "genesis_committed_info": {
+      "number": "0x37c0fc",
+      "block_hash": "0xb630b53e83420c91afb7901e7fb04693351f88c1b24ef9f4d882f061b848764c",
+      "transaction_hash": "0x20682eff6eb0c4d0c0f1660810631e3a3216785e5c9b529b1428b6f81bb8e597"
+    },
+    "rollup_type_script": {
+      "code_hash": "0x5c365147bb6c40e817a2a53e0dec3661f7390cc77f0c02db138303177b12e9fb",
+      "hash_type": "type",
+      "args": "0x118f5ff3ebbcdf10d90e8f0e5b59b0a793c3d325aa699201ff234e0af3dcde55"
+    }
+  },
+  "rpc_client": {
+    "indexer_url": "http://staging-godwoken-ckb-testnet-svc:8114/indexer",
+    "ckb_url": "http://staging-godwoken-ckb-testnet-svc:8114"
+  },
+  "rpc_server": {
+    "listen": "0.0.0.0:8119"
+  },
+  "rpc": {
+    "allowed_sudt_proxy_creator_account_id": [],
+    "sudt_proxy_code_hashes": []
+  },
+  "debug": {
+    "output_l1_tx_cycles": true,
+    "expected_l1_tx_upper_bound_cycles": 45000000,
+    "debug_tx_dump_path": "/debug-data/debug-tx-dump",
+    "enable_debug_rpc": false
+  },
+  "block_producer": {
+    "account_id": 0,
+    "rollup_cell_type_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x850e6c33d845356163c736bf8234856de0b0a8e2ad0c5227fc12058b8b602623",
+        "index": "0x0"
+      }
+    },
+    "rollup_config_cell_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0xab39cc4efb66b4989a575f0318e53ee37ab2e300fc3b206c3affbff755cbfc9c",
+        "index": "0x0"
+      }
+    },
+    "deposit_cell_lock_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x97614145cdec9ba924001c11cd49f1c424927437b40ed3ca3b82fff358f2e3de",
+        "index": "0x0"
+      }
+    },
+    "stake_cell_lock_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x9e7d41cb0372d26cae2f09493d5ef0fd74c2b4aec697b2cf05cd26d0d3537f13",
+        "index": "0x0"
+      }
+    },
+    "poa_lock_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x2175054824a105e29923dc5b7246c045eee3f12a29136932f46800f7a99bbded",
+        "index": "0x0"
+      }
+    },
+    "poa_state_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x3efd34c02081d7054aea2349149eb52c0d91fabd170716f99d50da6487b5ff69",
+        "index": "0x0"
+      }
+    },
+    "custodian_cell_lock_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x2f18c40ccf63191b4e0234607139aa9cfe7cc20e90e630efd768788e5721965d",
+        "index": "0x0"
+      }
+    },
+    "withdrawal_cell_lock_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0xb4b07dcd1571ac18683b515ada40e13b99bd0622197b6817047adc9f407f4828",
+        "index": "0x0"
+      }
+    },
+    "challenge_cell_lock_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x67ca75e48a759d32a3cb9e5130adaf87b13858932f6c9d88c2a752a9d797b5a6",
+        "index": "0x0"
+      }
+    },
+    "l1_sudt_type_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0xe12877ebd2c3c364dc46c5c992bcfaf4fee33fa13eebdf82c591fc9825aab769",
+        "index": "0x0"
+      }
+    },
+    "allowed_eoa_deps": {
+      "0xdeec13a7b8e100579541384ccaf4b5223733e4a5483c3aec95ddc4c1d5ea5b22": {
+        "dep_type": "code",
+        "out_point": {
+          "tx_hash": "0x2f9f8ec8a1556238aeeefed29e990d53ea75060ef04249371fd8b5246fffb8ea",
+          "index": "0x0"
+        }
+      }
+    },
+    "allowed_contract_deps": {
+      "0xd6d4b52ed2882cb0b2e1f802817c0ab05bd27da89a41ceddb25e0e347689ce69": {
+        "dep_type": "code",
+        "out_point": {
+          "tx_hash": "0xc0ff46d09e0ba52f257250748822086a00828304263f03e72392d6422d1c0eb9",
+          "index": "0x0"
+        }
+      },
+      "0xb6d6a2882d3d08cea565047bfe901cb2afe0cb790ea5e1b61e0532ef237c4a02": {
+        "dep_type": "code",
+        "out_point": {
+          "tx_hash": "0x3867a494c33027d294c4000c8299cbac24a461b7ce3c2c222f6d62006210785c",
+          "index": "0x0"
+        }
+      },
+      "0xbeb77e49c6506182ec0c02546aee9908aafc1561ec13beb488d14184c6cd1b79": {
+        "dep_type": "code",
+        "out_point": {
+          "tx_hash": "0x212054eadfc018719443309c91902400e0af6e0fd168f075523ff64eac61644b",
+          "index": "0x0"
+        }
+      }
+    },
+    "challenger_config": {
+      "rewards_receiver_lock": {
+        "code_hash": "0x49027a6b9512ef4144eb41bc5559ef2364869748e65903bd14da08c3425c0503",
+        "hash_type": "type",
+        "args": "0x0000000000000000000000000000000000000001"
+      },
+      "burn_lock": {
+        "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "hash_type": "data",
+        "args": "0x"
+      }
+    },
+    "wallet_config": {
+      "privkey_path": "./deploy_key",
+      "lock": {
+        "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "hash_type": "type",
+        "args": "0x952809177232d0dba355ba5b6f4eaca39cc57746"
+      }
+    }
+  },
+  "mem_pool": {
+    "execute_l2tx_max_cycles": 100000000,
+    "restore_path": "mem_block"
+  },
+  "store": {
+    "path": "./chain-data/store.db",
+    "options_file": "./db.toml",
+    "cache_size": 536870912
+  },
+  "web3_indexer": {
+    "database_url": "staging-godwoken-pg-db-svc:5432/web3indexer",
+    "polyjuice_script_type_hash": "0xbeb77e49c6506182ec0c02546aee9908aafc1561ec13beb488d14184c6cd1b79",
+    "eth_account_lock_hash": "0xdeec13a7b8e100579541384ccaf4b5223733e4a5483c3aec95ddc4c1d5ea5b22"
+  }
+}

@@ -1,4 +1,4 @@
-name: Testnet Faucet
+name: AlphaNet
 
 on:
   push:
@@ -9,10 +9,10 @@ on:
   # Note: GitHub Actions does not support the non-standard syntax @yearly, @monthly, @weekly, @daily, @hourly, and @reboot.
   # You can use crontab guru (https://crontab.guru/) to help generate your cron syntax and confirm what time it will run.
   # To help you get started, there is also a list of crontab guru examples (https://crontab.guru/examples.html).
-  - cron:  '50 12 * * *'
+  - cron:  '50 * * * *'
 
 jobs:
-  faucet:
+  deposit-every-1-hour:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -30,11 +30,9 @@ jobs:
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-yarn-
-    - name: Get CKB from testnet faucet everyday
-      run: |
-        yarn && yarn build-all
-        node packages/tools/lib/benchmark/ckb-testnet-faucet.js
-    - name: Setup tmate session for debugging if something failed
-      if: ${{ failure() || cancelled() }}
-      uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 30
+
+    - name: Generate AlphaNet Configs
+      run: yarn && yarn build-all && yarn generate-alphanet-configs
+    - name: Deposit into alphanet for all the accounts
+      working-directory: packages/tools
+      run: node lib/benchmark/batch-deposits.js
