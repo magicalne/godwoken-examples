@@ -1,7 +1,6 @@
 name: Testnet Faucet
 
 on:
-  push:
   schedule:
   # You can schedule a workflow to run at specific UTC times using POSIX cron syntax (https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07).
   # Scheduled workflows run on the latest commit on the default or base branch.
@@ -34,7 +33,7 @@ jobs:
       run: |
         yarn && yarn build-all
         node packages/tools/lib/benchmark/ckb-testnet-faucet.js
-    - name: Setup tmate session for debugging if something failed
-      if: ${{ failure() || cancelled() }}
-      uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 30
+    # - name: Setup tmate session for debugging if something failed
+    #   if: ${{ failure() || cancelled() }}
+    #   uses: mxschmitt/action-tmate@v3
+    #   timeout-minutes: 30
