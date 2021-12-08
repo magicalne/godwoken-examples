@@ -9,7 +9,7 @@ import { sendTx as sendDepositTx } from "../account/deposit-ckb";
 import { privKeys } from "./accounts";
 import { alphanetWeb3RpcUrl, CKB_SUDT_ID, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl, testnetGodwokenRpcUrl } from "../common";
 
-const MINIMUM_DEPOSIT_CAPACITY = "50000000000"; // 500 CKB
+const MINIMUM_DEPOSIT_CAPACITY = "30000000000"; // 500 CKB
 const defaultEthAddress = "0x6daf63d8411d6e23552658e3cfb48416a6a2ca78"
 
 async function batchDeposits(

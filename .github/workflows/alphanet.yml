@@ -8,10 +8,10 @@ on:
   # Note: GitHub Actions does not support the non-standard syntax @yearly, @monthly, @weekly, @daily, @hourly, and @reboot.
   # You can use crontab guru (https://crontab.guru/) to help generate your cron syntax and confirm what time it will run.
   # To help you get started, there is also a list of crontab guru examples (https://crontab.guru/examples.html).
-  - cron:  '50 * * * *'
+  - cron:  '15 * * * *'
 
-jobs:
-  deposit-every-1-hour:
+jobs:    
+  deposit-and-withdraw-every-1-hour:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -32,6 +32,10 @@ jobs:
 
     - name: Generate AlphaNet Configs
       run: yarn && yarn build-all && yarn generate-alphanet-configs
-    - name: Deposit into alphanet for all the accounts
+
+    - name: Deposit and Withdraw for all the accounts
       working-directory: packages/tools
-      run: node lib/benchmark/batch-deposits.js
+      run: |
+        node lib/benchmark/batch-deposits.js &
+        # Withdraw request from alphanet
+        node lib/benchmark/batch-withdrawals.js

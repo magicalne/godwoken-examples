@@ -1,23 +1,21 @@
 import { Godwoken } from "@godwoken-examples/godwoken";
 import { initConfig, waitForWithdraw } from "../account/common";
 import { withdrawal as withdrawReqFromL2ToL1 } from "../account/withdraw";
-import { CKB_SUDT_ID } from "../common";
+import { alphanetWeb3RpcUrl, CKB_SUDT_ID } from "../common";
 import { ethAddressToScriptHash, getBalanceByScriptHash } from "../modules/godwoken";
-import { ckbAddressToLockHash, privateKeyToCkbAddress, privateKeyToEthAddress } from "../modules/utils";
+import { ckbAddressToLockHash, privateKeyToCkbAddress, privateKeyToEthAddress, promiseAllLimitN } from "../modules/utils";
 import { privKeys } from "./accounts";
 
-const testnetGodwokenRpcUrl = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
-const alphanetWeb3RpcUrl = "https://rpc-staging.godwoken.io";
 const godwoken = new Godwoken(alphanetWeb3RpcUrl);
 
 async function batchWithdrawals(privKeys: string[]) {
   initConfig();
 
-  privKeys.forEach(async (privKey, idx) => {
+  let promiseArray = privKeys.map(privKey => async () => {
     const feeSudtId = CKB_SUDT_ID;
     const feeAmount = 1000n;
 
-    const capacity = 49900000000; // 499 CKB
+    const capacity = 26500000000; // 265 CKB
     const ownerCkbAddress = privateKeyToCkbAddress(privKey);
     console.log(`Withdraw from layer2 to ${ownerCkbAddress}`);
     
@@ -33,8 +31,7 @@ async function batchWithdrawals(privKeys: string[]) {
       // get balance on Godwoken
       const curGwBalance = await getBalanceByScriptHash(godwoken, CKB_SUDT_ID, accountScriptHash);
       if (curGwBalance < capacity) {
-        throw new Error("insufficient balance on Godwoken");
-        // console.warn("insufficient balance on Godwoken");
+        throw new Error(`insufficient balance(${curGwBalance}) on Godwoken`);
       }
       await withdrawReqFromL2ToL1(
         godwoken,
@@ -46,13 +43,15 @@ async function batchWithdrawals(privKeys: string[]) {
         feeSudtId,
         feeAmount
       );
-
       await waitForWithdraw(godwoken, accountScriptHash, curGwBalance);
-
+      return Promise.resolve("Withdrawal finished");
     } catch (e) {
       console.error(e);
+      return Promise.reject("Failed to withdraw");
     }
   });
+
+  promiseAllLimitN(12, promiseArray).catch(console.error);
 }
 
 /**
@@ -60,7 +59,8 @@ async function batchWithdrawals(privKeys: string[]) {
  */
 (function runTest() {
   const args = process.argv.slice(2);
-  console.log(`\t Using accounts[0..${args[0]}]`);
+  const endIdx = args[0] || privKeys.length;
+  console.log(`\t Using accounts[0..${endIdx}]`);
 
-  batchWithdrawals(privKeys.reverse().slice(0, Number(args[0])));
+  batchWithdrawals(privKeys.slice(0, Number(endIdx)));
 })();

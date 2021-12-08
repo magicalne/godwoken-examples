@@ -55,3 +55,22 @@ export async function retry<T>(fn: () => Promise<T>, retriesLeft = 3, interval =
     return await retry(fn, --retriesLeft, interval);
   }
 }
+
+export const promiseAllLimitN = async <T>(n: number, list: (() => Promise<T>)[]) => {
+  const head = list.slice(0, n)
+  const tail = list.slice(n)
+  const result: T[] = []
+  const execute = async (promise: () => Promise<T>, i: number, runNext: () => Promise<void>) => {
+    result[i] = await promise()
+    await runNext()
+  }
+  const runNext = async () => {
+    const i = list.length - tail.length
+    const promise = tail.shift()
+    if (promise !== undefined) {
+      await execute(promise, i, runNext)
+    }
+  }
+  await Promise.all(head.map((promise, i) => execute(promise, i, runNext)))
+  return result
+}
