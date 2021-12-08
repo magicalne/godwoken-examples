@@ -78,6 +78,6 @@ async function batchDeposits(
   console.log(`\t Using accounts[0..${endIdx}]`);
   
   batchDeposits(GodwokenNetwork.alphanet,
-                privKeys.slice(0, Number(endIdx)),
-                false, 500000000000n);
+                privKeys.reverse().slice(0, Number(endIdx)),
+                false, 8000000000000n);
 })();
