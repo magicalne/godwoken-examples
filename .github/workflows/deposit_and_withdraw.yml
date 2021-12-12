@@ -13,7 +13,12 @@ on:
 
 jobs:
   deposit-and-withdraw:
+    strategy:
+      fail-fast: false
+      matrix:
+        net: ['testnet', 'alphanet']
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
@@ -31,22 +36,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-yarn-
 
-    - name: Build-aall
+    - name: Build-all
       run: yarn && yarn build-all 
 
     - name: Generate Testnet Configs
-      run: yarn generate-testnet-configs
-
-    - name: Deposit and Withdraw for all the accounts
-      working-directory: packages/tools
-      run: |
-        # Withdraw request from testnet
-        node lib/benchmark/batch-withdrawals.js &
-        # Deposit into testnet
-        node lib/benchmark/batch-deposits.js
-
-    - name: Generate AlphaNet Configs
-      run: yarn generate-alphanet-configs
+      run: yarn generate-${{ matrix.net }}-configs
 
     - name: Deposit and Withdraw for all the accounts
       working-directory: packages/tools
