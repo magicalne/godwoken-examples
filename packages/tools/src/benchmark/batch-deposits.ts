@@ -21,12 +21,12 @@ async function deposit(privKey: string, ckbIndexer: CkbIndexer, godwokenRPC: God
   console.log("Using CKB address:", ckbAddress);
 
   return retry(async () => {
-    const accountScriptHash = ethAddressToScriptHash(ethAddress);
-    const currentBalance = await getBalanceByScriptHash(
-      godwokenRPC,
-      CKB_SUDT_ID,
-      accountScriptHash
-    );
+    // const accountScriptHash = ethAddressToScriptHash(ethAddress);
+    // const currentBalance = await getBalanceByScriptHash(
+    //   godwokenRPC,
+    //   CKB_SUDT_ID,
+    //   accountScriptHash
+    // );
 
     const txHash: Hash = await sendDepositTx(
       deploymentConfig,
@@ -90,8 +90,9 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
 (function runTest() {
   const args = process.argv.slice(2);
   const endIdx = args[0] || privKeys.length;
-  console.log(`\t Using accounts[0..${endIdx}]`);
-  
-  batchDeposits(GodwokenNetwork.alphanet,
+  console.log(`\t Using accounts[0..${endIdx}]`);  
+
+  console.log("process.env.GW_NET", process.env.GW_NET);
+  batchDeposits((<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
                 privKeys.reverse().slice(0, Number(endIdx)));
 })();

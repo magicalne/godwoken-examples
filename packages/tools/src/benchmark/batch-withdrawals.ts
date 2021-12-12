@@ -1,15 +1,24 @@
 import { Godwoken } from "@godwoken-examples/godwoken";
 import { initConfig, waitForWithdraw } from "../account/common";
 import { withdrawal as withdrawReqFromL2ToL1 } from "../account/withdraw";
-import { alphanetWeb3RpcUrl, CKB_SUDT_ID } from "../common";
+import { alphanetWeb3RpcUrl, CKB_SUDT_ID, GodwokenNetwork, testnetGodwokenRpcUrl } from "../common";
 import { ethAddressToScriptHash, getBalanceByScriptHash } from "../modules/godwoken";
 import { ckbAddressToLockHash, privateKeyToCkbAddress, privateKeyToEthAddress, promiseAllLimitN } from "../modules/utils";
 import { privKeys } from "./accounts";
 
-const godwoken = new Godwoken(alphanetWeb3RpcUrl);
-
-async function batchWithdrawals(privKeys: string[]) {
+async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
   initConfig();
+  let godwokenRPC: Godwoken;
+  switch (from) {
+    case GodwokenNetwork.alphanet:
+      godwokenRPC = new Godwoken(alphanetWeb3RpcUrl);
+      break;
+    case GodwokenNetwork.testnet:
+      godwokenRPC = new Godwoken(testnetGodwokenRpcUrl);
+      break;
+    default:
+      throw new Error("Undefined GodwokenNetwork");
+  }
 
   let promiseArray = privKeys.map(privKey => async () => {
     const feeSudtId = CKB_SUDT_ID;
@@ -29,12 +38,12 @@ async function batchWithdrawals(privKeys: string[]) {
 
     try {
       // get balance on Godwoken
-      const curGwBalance = await getBalanceByScriptHash(godwoken, CKB_SUDT_ID, accountScriptHash);
+      const curGwBalance = await getBalanceByScriptHash(godwokenRPC, CKB_SUDT_ID, accountScriptHash);
       if (curGwBalance < capacity) {
         throw new Error(`insufficient balance(${curGwBalance}) on Godwoken`);
       }
       await withdrawReqFromL2ToL1(
-        godwoken,
+        godwokenRPC,
         privKey,
         capacity.toString(),
         amount.toString(),
@@ -43,7 +52,7 @@ async function batchWithdrawals(privKeys: string[]) {
         feeSudtId,
         feeAmount
       );
-      await waitForWithdraw(godwoken, accountScriptHash, curGwBalance);
+      await waitForWithdraw(godwokenRPC, accountScriptHash, curGwBalance);
       return Promise.resolve("Withdrawal finished");
     } catch (e) {
       console.error(e);
@@ -62,5 +71,7 @@ async function batchWithdrawals(privKeys: string[]) {
   const endIdx = args[0] || privKeys.length;
   console.log(`\t Using accounts[0..${endIdx}]`);
 
-  batchWithdrawals(privKeys.slice(0, Number(endIdx)));
+  console.log("process.env.GW_NET", process.env.GW_NET);
+  batchWithdrawals((<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
+                   privKeys.slice(0, Number(endIdx)));
 })();

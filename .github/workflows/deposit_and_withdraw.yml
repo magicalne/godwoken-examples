@@ -46,6 +46,6 @@ jobs:
       working-directory: packages/tools
       run: |
         # Withdraw request from alphanet
-        node lib/benchmark/batch-withdrawals.js &
+        GW_NET=${{ matrix.net }} node lib/benchmark/batch-withdrawals.js &
         # Deposit into alphanet
-        node lib/benchmark/batch-deposits.js
+        GW_NET=${{ matrix.net }} node lib/benchmark/batch-deposits.js
