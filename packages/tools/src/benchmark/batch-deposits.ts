@@ -40,7 +40,7 @@ async function deposit(privKey: string, ckbIndexer: CkbIndexer, godwokenRPC: God
     console.log("Transaction hash:", txHash);
     console.log("--------- wait for deposit transaction ----------");
     await waitTxCommitted(txHash, testnetCkbRpc);
-    await waitForDeposit(godwokenRPC, accountScriptHash, currentBalance);
+    // await waitForDeposit(godwokenRPC, accountScriptHash, currentBalance);
   }, 3, 10000);
 }
 
