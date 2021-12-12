@@ -51,7 +51,7 @@ async function batchWithdrawals(privKeys: string[]) {
     }
   });
 
-  promiseAllLimitN(12, promiseArray).catch(console.error);
+  promiseAllLimitN(20, promiseArray).catch(console.error);
 }
 
 /**

@@ -62,11 +62,17 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
 
   let idx = 0;
   let depositingNum = 0;
-  const batchNum = 50;
+  const batchNum = 60;
   while (idx < privKeys.length) {
     if (depositingNum < batchNum) {
       depositingNum++;
-      deposit(privKeys[idx++], indexer, godwokenRPC).finally(() => depositingNum--);
+      try {
+        deposit(privKeys[idx++], indexer, godwokenRPC)
+          .finally(() => depositingNum--);
+      } catch (e) {
+        console.error(e);
+        depositingNum--;
+      }
       console.debug(`depositingNum: ${depositingNum} | idx = ${idx}`);
     }
     await asyncSleep(100);
