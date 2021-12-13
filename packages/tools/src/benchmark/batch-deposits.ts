@@ -68,6 +68,7 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
       depositingNum++;
       try {
         deposit(privKeys[idx++], indexer, godwokenRPC)
+          .catch(console.error)
           .finally(() => depositingNum--);
       } catch (e) {
         console.error(e);
