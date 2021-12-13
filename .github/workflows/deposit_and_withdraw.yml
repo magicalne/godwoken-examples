@@ -45,7 +45,8 @@ jobs:
     - name: Deposit and Withdraw for all the accounts
       working-directory: packages/tools
       run: |
-        # Withdraw request from alphanet
+        [[ ${{ matrix.net }} == "testnet" ]] && sleep 120
+        # Withdraw requests
         GW_NET=${{ matrix.net }} node lib/benchmark/batch-withdrawals.js &
-        # Deposit into alphanet
+        # Deposits
         GW_NET=${{ matrix.net }} node lib/benchmark/batch-deposits.js
