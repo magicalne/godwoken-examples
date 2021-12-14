@@ -13,7 +13,8 @@ import {
 } from '@ckb-lumos/base';
 import { RPC } from '@ckb-lumos/rpc';
 import axios from 'axios';
-import { logger } from './logger';
+import { logger } from '../modules/logger';
+import { ROLLUP_TYPE_SCRIPT } from '../modules/godwoken-config';
 
 function asyncSleep(timeout: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -111,7 +112,10 @@ export class CkbIndexer implements Indexer {
 
   /*
    * Addtional note:
-   * Only accept lock and type parameters as `Script` type, along with `data` field in QueryOptions. Use it carefully!
+   * Only accept lock and type parameters as `Script` type,
+   * along with `data` field in QueryOptions.
+   * 
+   * Use it carefully!
    * */
   collector(queries: QueryOptions): CellCollector {
     const { lock, type } = queries;
@@ -231,6 +235,19 @@ export class CkbIndexer implements Indexer {
       }
     }
     return infos;
+  }
+
+  /**
+   * getRollupCell by the ROLLUP_TYPE_SCRIPT of godwoken-config
+   */
+  public async getRollupCell(): Promise<undefined | Cell> {
+    await this.waitForSync();
+    let rollupCells = await this.getCells({
+      script: ROLLUP_TYPE_SCRIPT,
+      script_type: ScriptType.type
+    });
+    if (rollupCells.length === 0) return undefined;
+    return rollupCells[0];
   }
 
   running(): boolean {

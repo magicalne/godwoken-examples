@@ -5,7 +5,7 @@ import {
   HexString,
   utils,
   WitnessArgs,
-  core as baseCore,
+  core as LumosBaseCore,
   Transaction,
   OutPoint,
   Script,
@@ -23,9 +23,9 @@ import {
 } from "../modules/godwoken-config";
 import { asyncSleep, privateKeyToCkbAddress } from "../modules/utils";
 import { exit } from "process";
-import { core, normalizer } from "@godwoken-examples/godwoken";
+import { core as GodwokenSchemas, normalizer } from "@godwoken-examples/godwoken";
 import { normalizers, Reader } from "ckb-js-toolkit";
-import { common } from "@ckb-lumos/common-scripts";
+import { common as LumosCommonScripts } from "@ckb-lumos/common-scripts";
 import { key } from "@ckb-lumos/hd";
 import { Command } from "commander";
 import { initConfigAndSync } from "./common";
@@ -102,7 +102,7 @@ async function unlockInner(
     console.error("[ERROR]: rollup_cell not found");
     exit(-1);
   }
-  const globalState = new core.GlobalState(new Reader(rollup_cell.data));
+  const globalState = new GodwokenSchemas.GlobalState(new Reader(rollup_cell.data));
   const last_finalized_block_number = globalState
     .getLastFinalizedBlockNumber()
     .toLittleEndianBigUint64();
@@ -132,7 +132,7 @@ async function unlockInner(
 
     const lock_args = cell.cell_output.lock.args;
     const withdrawal_lock_args_data = "0x" + lock_args.slice(66);
-    const withdrawal_lock_args = new core.WithdrawalLockArgs(
+    const withdrawal_lock_args = new GodwokenSchemas.WithdrawalLockArgs(
       new Reader(withdrawal_lock_args_data)
     );
     const owner_lock_hash = new Reader(
@@ -175,7 +175,7 @@ async function unlockInner(
   const data =
     "0x00000000" +
     new Reader(
-      core.SerializeUnlockWithdrawalViaFinalize(
+      GodwokenSchemas.SerializeUnlockWithdrawalViaFinalize(
         normalizer.NormalizeUnlockWithdrawalViaFinalize({})
       )
     )
@@ -186,7 +186,7 @@ async function unlockInner(
     lock: data,
   };
   const withdrawal_witness = new Reader(
-    baseCore.SerializeWitnessArgs(
+    LumosBaseCore.SerializeWitnessArgs(
       normalizers.NormalizeWitnessArgs(new_witness_args)
     )
   ).serializeJson();
@@ -238,12 +238,12 @@ async function unlockInner(
       index: 0,
     });
   });
-  txSkeleton = await common.payFeeByFeeRate(
+  txSkeleton = await LumosCommonScripts.payFeeByFeeRate(
     txSkeleton,
     [ckb_address],
     BigInt(1000)
   );
-  txSkeleton = common.prepareSigningEntries(txSkeleton);
+  txSkeleton = LumosCommonScripts.prepareSigningEntries(txSkeleton);
   // console.debug("tx:", JSON.stringify(txSkeleton.toJS(), null, 2))
 
   const message: HexString = txSkeleton.get("signingEntries").get(0)!.message;
@@ -342,7 +342,7 @@ function getSudtScript(args: HexString): Script {
   };
 }
 
-function getSudtCellDep(): CellDep {
+export function getSudtCellDep(): CellDep {
   const sudtInfo = getConfig().SCRIPTS.SUDT;
   if (sudtInfo === undefined || sudtInfo === null) {
     throw new Error("SUDT info not found in lumos config!");

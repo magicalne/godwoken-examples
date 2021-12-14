@@ -9,3 +9,6 @@ export const ROLLUP_TYPE_SCRIPT: Script =
 
 export const ROLLUP_CELL_DEP: CellDep =
   godwokenConfig.block_producer.rollup_cell_type_dep;
+
+export const CKB_INDEXER_URL: string = godwokenConfig.rpc_client.indexer_url;
+export const CKB_RPC_URL: string = godwokenConfig.rpc_client.ckb_url;
