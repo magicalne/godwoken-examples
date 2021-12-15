@@ -1,24 +1,14 @@
 import { Godwoken } from "@godwoken-examples/godwoken";
 import { initConfig, waitForWithdraw } from "../account/common";
 import { withdrawal as withdrawReqFromL2ToL1 } from "../account/withdraw";
-import { alphanetWeb3RpcUrl, CKB_SUDT_ID, GodwokenNetwork, testnetGodwokenRpcUrl } from "../common";
+import { CKB_SUDT_ID, getGodwokenWeb3, GodwokenNetwork } from "../common";
 import { ethAddressToScriptHash, getBalanceByScriptHash } from "../modules/godwoken";
 import { ckbAddressToLockHash, privateKeyToCkbAddress, privateKeyToEthAddress, promiseAllLimitN } from "../modules/utils";
 import { privKeys } from "./accounts";
 
 async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
   initConfig();
-  let godwokenRPC: Godwoken;
-  switch (from) {
-    case GodwokenNetwork.alphanet:
-      godwokenRPC = new Godwoken(alphanetWeb3RpcUrl);
-      break;
-    case GodwokenNetwork.testnet:
-      godwokenRPC = new Godwoken(testnetGodwokenRpcUrl);
-      break;
-    default:
-      throw new Error("Undefined GodwokenNetwork");
-  }
+  let godwokenRPC: Godwoken = getGodwokenWeb3(from);
 
   let promiseArray = privKeys.map(privKey => async () => {
     const feeSudtId = CKB_SUDT_ID;
@@ -27,7 +17,7 @@ async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
     const capacity = 26500000000; // 265 CKB
     const ownerCkbAddress = privateKeyToCkbAddress(privKey);
     console.log(`Withdraw from layer2 to ${ownerCkbAddress}`);
-    
+
     // we don't test sUDT withdrawal here
     const amount = 0;     // other sUDT
     const sudtScriptHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -56,11 +46,11 @@ async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
       return Promise.resolve("Withdrawal finished");
     } catch (e) {
       console.error(e);
-      return Promise.reject("Failed to withdraw");
+      return Promise.resolve("Failed to withdraw");
     }
   });
 
-  promiseAllLimitN(20, promiseArray).catch(console.error);
+  promiseAllLimitN(30, promiseArray).catch(console.error);
 }
 
 /**
@@ -72,6 +62,7 @@ async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
   console.log(`\t Using accounts[0..${endIdx}]`);
 
   console.log("process.env.GW_NET", process.env.GW_NET);
-  batchWithdrawals((<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
-                   privKeys.slice(0, Number(endIdx)));
+  batchWithdrawals(
+    (<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
+    privKeys.slice(0, Number(endIdx)));
 })();

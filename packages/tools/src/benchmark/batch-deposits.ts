@@ -7,7 +7,7 @@ import { getBalanceByScriptHash, ethAddressToScriptHash } from "../modules/godwo
 import { Godwoken } from "@godwoken-examples/godwoken";
 import { sendTx as sendDepositTx } from "../account/deposit-ckb";
 import { privKeys } from "./accounts";
-import { alphanetWeb3RpcUrl, CKB_SUDT_ID, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl, testnetGodwokenRpcUrl } from "../common";
+import { getGodwokenWeb3, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl } from "../common";
 import { CkbIndexer } from "../account/indexer-remote";
 
 const MINIMUM_DEPOSIT_CAPACITY = "30000000000"; // 500 CKB
@@ -48,17 +48,7 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
   console.log(`Rollup type hash: ${getRollupTypeHash()}`);
 
   const indexer = await initConfigAndSync(testnetCkbRpcUrl, testnetCkbIndexerURL);
-  let godwokenRPC: Godwoken;
-  switch (to) {
-    case GodwokenNetwork.alphanet:
-      godwokenRPC = new Godwoken(alphanetWeb3RpcUrl);
-      break;
-    case GodwokenNetwork.testnet:
-      godwokenRPC = new Godwoken(testnetGodwokenRpcUrl);
-      break;
-    default:
-      throw new Error("Undefined GodwokenNetwork");
-  }
+  let godwokenWeb3: Godwoken = getGodwokenWeb3(to);
 
   let idx = 0;
   let depositingNum = 0;
@@ -67,7 +57,7 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
     if (depositingNum < batchNum) {
       depositingNum++;
       try {
-        deposit(privKeys[idx++], indexer, godwokenRPC)
+        deposit(privKeys[idx++], indexer, godwokenWeb3)
           .catch(console.error)
           .finally(() => depositingNum--);
       } catch (e) {

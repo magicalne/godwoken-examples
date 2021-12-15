@@ -3,6 +3,7 @@ import { core as base_core, Script, utils } from "@ckb-lumos/base";
 import { scriptToAddress } from "@ckb-lumos/helpers";
 import { getConfig } from "@ckb-lumos/config-manager";
 import {
+  Godwoken as GodwokenWeb3,
   GodwokenUtils,
   RawL2Transaction,
   toBuffer,
@@ -10,16 +11,35 @@ import {
 import * as secp256k1 from "secp256k1";
 const keccak256 = require("keccak256");
 
+export const CKB_SUDT_ID = 1;
+
 export enum GodwokenNetwork {
   alphanet = 'alphanet',
   testnet = 'testnet',
 }
 
-export const CKB_SUDT_ID = 1;
-export const testnetGodwokenRpcUrl = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
-export const alphanetWeb3RpcUrl = "https://rpc-staging.ckbapp.dev";
-export const testnetCkbRpcUrl = "https://testnet.ckbapp.dev/rpc";
-export const testnetCkbIndexerURL = "https://testnet.ckbapp.dev/indexer";
+export const testnetWeb3Url = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
+export const alphanetWeb3Url = "https://rpc-staging.ckbapp.dev";
+export function getGodwokenWeb3(web3: GodwokenNetwork | string): GodwokenWeb3 {
+  console.log(web3);
+  
+  let gwWeb3: GodwokenWeb3;
+  switch (web3) {
+    case GodwokenNetwork.alphanet:
+      gwWeb3 = new GodwokenWeb3(alphanetWeb3Url);
+      break;
+    case GodwokenNetwork.testnet:
+      gwWeb3 = new GodwokenWeb3(testnetWeb3Url);
+      break;
+    default:
+      console.warn("Undefined GodwokenNetwork");
+      gwWeb3 = new GodwokenWeb3(web3);
+  }
+  return gwWeb3;
+}
+
+export const testnetCkbRpcUrl = "https://testnet.ckb.dev/rpc";
+export const testnetCkbIndexerURL = "https://testnet.ckb.dev/indexer";
 export const testnetCkbRpc = new RPC(testnetCkbRpcUrl);
 
 export function generateLockScript(privateKey: any) {
