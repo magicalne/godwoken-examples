@@ -1,6 +1,6 @@
 import { Cell, core as LumosBaseCore, Hash, HexString, Script, utils as LumosUtils, WitnessArgs } from "@ckb-lumos/base";
 import { CkbIndexer } from "../account/indexer-remote";
-import { privateKeyToCkbAddress, promiseAllLimitN, retry } from "../modules/utils";
+import { asyncSleep, privateKeyToCkbAddress, promiseAllLimitN, retry } from "../modules/utils";
 import { core as GodwokenSchemas, normalizer } from "@godwoken-examples/godwoken";
 import { normalizers, Reader } from "ckb-js-toolkit";
 import { logger } from "../modules/logger";
@@ -58,7 +58,7 @@ async function sendUnlockTransaction(
   }
 
   let txSkeleton = TransactionSkeleton({ cellProvider: ckbIndexer });
-  // handle multi withdrawalCells
+  // TODO: andle multi withdrawalCells
   for (const withdrawalCell of withdrawalCells) {
     txSkeleton = txSkeleton
       .update("inputs", inputs => inputs.push(withdrawalCell))
@@ -101,13 +101,30 @@ async function sendUnlockTransaction(
   const txHash: Hash | undefined = await testnetCkbRpc.send_transaction(tx, "passthrough");
   console.log("UnlockTransaction Hash:", txHash);
   
-  // TODO:
-  // const isSuccess = await waitForTxCommitted(rpc, tx, txHash);
-  // if (isSuccess === false) {
-  //   return true;
-  // }
-
-  return txHash;
+  let timeoutID = setTimeout(() => {
+    throw new Error("Withdrawal timeout");
+  }, 300000); // 300s
+  // waitForTxCommitted
+  while (true) {
+    await asyncSleep(6710); // average block time of CKB aggron testnet
+    try {
+      const txWithStatus = await testnetCkbRpc.get_transaction(txHash);
+      logger.debug(`current tx status: ${txWithStatus.tx_status}`);
+      if (txWithStatus.tx_status.status === "committed") {
+        console.log(`UnlockTransaction ${txHash} committed!`);
+        clearTimeout(timeoutID);
+        return txHash;
+      }
+      if (txWithStatus.tx_status.status === "rejected") {
+        clearTimeout(timeoutID);
+        return Promise.reject("UnlockTransaction ${txHash} failed!");
+      }
+    } catch (error) {
+      console.error("Unknown Error:", error);
+      clearTimeout(timeoutID);
+      throw error;
+    }
+  }
 }
 
 /**
@@ -210,13 +227,16 @@ async function batchUnlock(privKeys: string[]) {
       ckbIndexer,
       maxWithdrawalCells,
       privKey
-    );
+    ).catch(e => {
+      console.error(e);
+      return [];
+    });
 
     retry(() => sendUnlockTransaction(ckbIndexer, withdrawalCells, privKey), 3)
       .catch(console.error);
   });
 
-  promiseAllLimitN(3, promiseArray).catch(console.error);
+  promiseAllLimitN(2, promiseArray).catch(console.error);
 }
 
 /**
@@ -232,7 +252,6 @@ async function batchUnlock(privKeys: string[]) {
   const endIdx = args[0] || privKeys.length;
   console.log(`\t Using accounts[0..${endIdx}]`);
 
-  // console.log("process.env.GW_NET", process.env.GW_NET);
   batchUnlock(
     // (<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
     privKeys.slice(0, Number(endIdx))
