@@ -35,7 +35,7 @@ jobs:
         yarn && yarn build-all
         yarn generate-testnet-configs
         node packages/tools/lib/benchmark/ckb-testnet-faucet.js
-    - name: Setup tmate session for debugging if something failed
-      if: ${{ failure() || cancelled() }}
-      uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 30
+    # - name: Setup tmate session for debugging if something failed
+    #   if: ${{ failure() || cancelled() }}
+    #   uses: mxschmitt/action-tmate@v3
+    #   timeout-minutes: 30
