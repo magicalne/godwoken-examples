@@ -47,13 +47,14 @@ jobs:
       run: |
         node lib/benchmark/batch-unlock.js
 
-    - name: Deposit and Withdraw for all the accounts
-      working-directory: packages/tools
-      run: |
-        [[ ${{ matrix.net }} == "testnet" ]] && sleep 120
-        # Withdraw requests
-        GW_NET=${{ matrix.net }} node lib/benchmark/batch-withdrawals.js &
-        # Deposits
-        GW_NET=${{ matrix.net }} node lib/benchmark/batch-deposits.js
+    # moved to https://github.com/nervosnetwork/godwoken-tests/actions/workflows/deposit_and_withdraw.yml
+    # - name: Deposit and Withdraw for all the accounts
+    #   working-directory: packages/tools
+    #   run: |
+    #     [[ ${{ matrix.net }} == "testnet" ]] && sleep 120
+    #     # Withdraw requests
+    #     GW_NET=${{ matrix.net }} node lib/benchmark/batch-withdrawals.js &
+    #     # Deposits
+    #     GW_NET=${{ matrix.net }} node lib/benchmark/batch-deposits.js
 
 
