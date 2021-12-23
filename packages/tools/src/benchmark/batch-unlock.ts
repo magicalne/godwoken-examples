@@ -1,8 +1,8 @@
-import { Cell, core as LumosBaseCore, Hash, HexString, Script, utils as LumosUtils, WitnessArgs } from "@ckb-lumos/base";
+import { Cell, core as LumosBaseCore, Hash, HexString, Script, TransactionWithStatus, utils as LumosUtils, utils, WitnessArgs } from "@ckb-lumos/base";
 import { CkbIndexer } from "../account/indexer-remote";
 import { asyncSleep, privateKeyToCkbAddress, retry } from "../modules/utils";
-import { core as GodwokenSchemas, normalizer } from "@godwoken-examples/godwoken";
-import { normalizers, Reader } from "ckb-js-toolkit";
+import { core as GodwokenSchemas, Godwoken, normalizer } from "@godwoken-examples/godwoken";
+import { normalizers, Reader, RPC } from "ckb-js-toolkit";
 import { logger } from "../modules/logger";
 import { deploymentConfig } from "../modules/deployment-config";
 import { parseAddress, sealTransaction, TransactionSkeleton } from "@ckb-lumos/helpers";
@@ -11,7 +11,7 @@ import { initConfigAndSync } from "../account/common";
 import { getSudtCellDep } from "../account/unlock";
 import { common as LumosCommonScripts } from "@ckb-lumos/common-scripts";
 import { key as LumosHdKey } from "@ckb-lumos/hd";
-import { testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl } from "../common";
+import { getGodwokenWeb3, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl } from "../common";
 import { ROLLUP_TYPE_HASH } from "../modules/godwoken-config";
 
 /**
@@ -52,7 +52,14 @@ async function sendUnlockTransaction(
   ).serializeJson();
 
   // TODO: use gw_get_last_submitted_info to getRollupCell
-  const rollupCell = await ckbIndexer.getRollupCell();
+  let rollupCell: Cell | undefined;
+  if (process.env.GW_NET === GodwokenNetwork.alphanet as string) {
+    console.log("getRollupCellByGwLastSubmittedInfo");
+    
+    rollupCell = await getRollupCellByGwLastSubmittedInfo();
+  } else {
+    rollupCell = await ckbIndexer.getRollupCell();
+  }
   if (rollupCell == null) {
     console.error("[ERROR]: rollupCell not found");
     return;
@@ -75,7 +82,7 @@ async function sendUnlockTransaction(
   txSkeleton = txSkeleton
     .update("cellDeps", cellDeps => cellDeps.push(deploymentConfig.withdrawal_lock_dep))
     .update("cellDeps", cellDeps => cellDeps.push({
-      out_point: rollupCell.out_point!,
+      out_point: rollupCell!.out_point!,
       dep_type: "code"
     }))
     .update("witnesses", witnesses => witnesses.push(withdrawalWitness))
@@ -263,11 +270,47 @@ function getLockScriptHashMap(privKeys: string[]): Map<string, string> {
   return map;
 }
 
+async function getRollupCellByGwLastSubmittedInfo(): Promise<Cell> {
+  const godwokenClient: Godwoken = getGodwokenWeb3(
+    process.env.GW_NET || GodwokenNetwork.alphanet
+  );
+  
+  const result = await godwokenClient.getLastSubmittedInfo();
+  const txHash = result.transaction_hash;
+  const ckbRpc = new RPC(process.env.CKB_RPC_URL || testnetCkbRpcUrl);
+  const tx: TransactionWithStatus | null = await retry(async () => {
+    const _tx = await ckbRpc.get_transaction(txHash);
+    return _tx || Promise.reject(null);
+  }, 10, 1000);
+  if (tx == null) {
+    throw new Error("Last submitted tx not found!");
+  }
+
+  let rollupIndex = tx.transaction.outputs.findIndex((o) => {
+    return o.type && utils.computeScriptHash(o.type) === ROLLUP_TYPE_HASH;
+  });
+  const rollupOutput = tx.transaction.outputs[rollupIndex];
+  const rollupOutputData = tx.transaction.outputs_data[rollupIndex];
+
+  if (rollupOutput == null) {
+    throw new Error(`Rollup cell not found in last submitted tx!`);
+  }
+
+  return {
+    out_point: {
+      tx_hash: txHash,
+      index: "0x" + rollupIndex.toString(16),
+    },
+    cell_output: rollupOutput,
+    data: rollupOutputData,
+  } as Cell;
+}
+
 /**
  * Enviroments:
  * CKB_RPC_URL=https://testnet.ckb.dev/rpc
  * CKB_INDEXER_URL=https://testnet.ckb.dev/indexer
- * GW_NET=<GodwokenNetwork>
+ * GW_NET=<GodwokenNetwork or GodwokenWeb3Url>
  * DEBUG=true
  * 
  * Usage:
@@ -283,8 +326,5 @@ function getLockScriptHashMap(privKeys: string[]): Map<string, string> {
   const endIdx = args[0] || privKeys.length;
   console.log(`\t Using accounts[0..${endIdx}]`);
 
-  batchUnlock(
-    // (<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
-    privKeys.slice(0, Number(endIdx))
-  );
+  batchUnlock(privKeys.slice(0, Number(endIdx)));
 })();

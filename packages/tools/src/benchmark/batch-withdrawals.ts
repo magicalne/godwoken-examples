@@ -8,7 +8,7 @@ import { privKeys } from "./accounts";
 
 async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
   initConfig();
-  let godwokenRPC: Godwoken = getGodwokenWeb3(from);
+  let godwokenWeb3: Godwoken = getGodwokenWeb3(from);
 
   let promiseArray = privKeys.map(privKey => async () => {
     const feeSudtId = CKB_SUDT_ID;
@@ -28,12 +28,12 @@ async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
 
     try {
       // get balance on Godwoken
-      const curGwBalance = await getBalanceByScriptHash(godwokenRPC, CKB_SUDT_ID, accountScriptHash);
+      const curGwBalance = await getBalanceByScriptHash(godwokenWeb3, CKB_SUDT_ID, accountScriptHash);
       if (curGwBalance < capacity) {
         throw new Error(`insufficient balance(${curGwBalance}) on Godwoken`);
       }
       await withdrawReqFromL2ToL1(
-        godwokenRPC,
+        godwokenWeb3,
         privKey,
         capacity.toString(),
         amount.toString(),
@@ -42,7 +42,7 @@ async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
         feeSudtId,
         feeAmount
       );
-      await waitForWithdraw(godwokenRPC, accountScriptHash, curGwBalance);
+      await waitForWithdraw(godwokenWeb3, accountScriptHash, curGwBalance);
       return Promise.resolve("Withdrawal finished");
     } catch (e) {
       console.error(e);
