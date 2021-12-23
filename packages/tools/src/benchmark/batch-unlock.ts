@@ -14,6 +14,9 @@ import { key as LumosHdKey } from "@ckb-lumos/hd";
 import { getGodwokenWeb3, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl } from "../common";
 import { ROLLUP_TYPE_HASH } from "../modules/godwoken-config";
 
+let totalSentTxCount = 0;
+let succeedCount = 0;
+
 /**
  * Send unlock Transaction for multi finalized withdrawal cells
  * @param ckbIndexer 
@@ -108,6 +111,7 @@ async function sendUnlockTransaction(
 
   const txHash: Hash | undefined = await testnetCkbRpc.send_transaction(tx, "passthrough");
   console.log("UnlockTransaction Hash:", txHash);
+  totalSentTxCount++;
 
   let timeout: boolean = false;
   let timeoutId = setTimeout(() => timeout = true, 300000); // 300s
@@ -121,6 +125,10 @@ async function sendUnlockTransaction(
       if (txWithStatus.tx_status.status === "committed") {
         console.log(`UnlockTransaction ${txHash} committed!`);
         clearTimeout(timeoutId);
+        succeedCount++;
+        console.log(`|
+| SuccessRate (succeedCount/totalSentTxCount): ${(succeedCount * 100 / totalSentTxCount).toFixed(2)}% (${succeedCount}/${totalSentTxCount})
+|`);
         return txHash;
       }
       if (txWithStatus.tx_status.status === "rejected") {
@@ -173,7 +181,7 @@ async function unlockFinalizedWithdrawals(
     type: sudtScript ? sudtScript : "empty",
     argsLen: "any",
     // testnet skip
-    // skip: 3000000, // TODO: this config does not work?
+    skip: 30, // TODO: this config does not work?
   });
   let unFinalizedWithdrawalCellNum = 0;
   const searchTime = 300; // senconds
@@ -225,8 +233,7 @@ async function unlockFinalizedWithdrawals(
 
   }
 
-  // TODO: successRate
-  const unlockTxHash = await retry(() => sendUnlockTransaction(ckbIndexer, withdrawalCells), 6)
+  await retry(() => sendUnlockTransaction(ckbIndexer, withdrawalCells), 6)
     .catch(console.error);
 }
 

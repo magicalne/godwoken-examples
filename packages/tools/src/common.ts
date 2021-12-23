@@ -21,8 +21,7 @@ export enum GodwokenNetwork {
 export const testnetWeb3Url = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
 export const alphanetWeb3Url = "https://rpc-staging.ckbapp.dev";
 export function getGodwokenWeb3(web3: GodwokenNetwork | string): GodwokenWeb3 {
-  console.log(web3);
-  
+  console.log("init GodwokenWeb3:", web3);
   let gwWeb3: GodwokenWeb3;
   switch (web3) {
     case GodwokenNetwork.alphanet:
