@@ -158,6 +158,7 @@ export class CkbIndexer implements Indexer {
               const res = await request('get_cells', params, ckbIndexerUrl);
               const liveCells = res.objects;
               cursor = res.last_cursor;
+              logger.debug("cursor", cursor);
               for (const cell of liveCells) {
                 if (queryData === 'any' || queryData === cell.output_data) {
                   yield {
@@ -194,10 +195,11 @@ export class CkbIndexer implements Indexer {
       }
       return (res.data as any).result;
     } catch (err: any) {
-      if ((err.response && err.response.data) || err.response.data.message) {
+      logger.debug(err);
+      if (err.response && err.response.data && err.response.data.message) {
         throw new Error(method + 'Request Error' + err.response.data.message);
       }
-      throw new Error(method + 'Request Error' + err.message);
+      throw new Error(method + ' Request Error ' + err.message);
     }
   }
 

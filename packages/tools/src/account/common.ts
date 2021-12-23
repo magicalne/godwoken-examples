@@ -32,7 +32,7 @@ async function indexerReady(indexer: any, updateProgress=((_indexerTip: bigint, 
       try {
 			  indexerTipObj = await indexer.tip();
       } catch (error) {
-        console.error(error?.message);
+        console.error(error?.message || error);
 
         throw new Error(`Can't connect to ckb-indexer. Please make sure ckb-indexer is running and its URL is valid and reachable. Make sure the URL begins with http:// or https://.`);
       }
