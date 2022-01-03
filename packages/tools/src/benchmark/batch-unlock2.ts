@@ -1,6 +1,6 @@
 import { Cell, core as LumosBaseCore, Hash, HexString, Script, TransactionWithStatus, utils as LumosUtils, utils, WitnessArgs } from "@ckb-lumos/base";
 import { CkbIndexer } from "../account/indexer-remote";
-import { asyncSleep, privateKeyToCkbAddress, retry } from "../modules/utils";
+import { asyncSleep, privateKeyToCkbAddress, promiseAllLimitN, retry, shuffle } from "../modules/utils";
 import { core as GodwokenSchemas, Godwoken, normalizer } from "@godwoken-examples/godwoken";
 import { normalizers, Reader, RPC } from "ckb-js-toolkit";
 import { logger } from "../modules/logger";
@@ -14,6 +14,7 @@ import { key as LumosHdKey } from "@ckb-lumos/hd";
 import { getGodwokenWeb3, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl } from "../common";
 import { ROLLUP_TYPE_HASH } from "../modules/godwoken-config";
 
+let unlockJobs: (() => Promise<void>)[] = [];
 let totalSentTxCount = 0;
 let succeedCount = 0;
 
@@ -54,14 +55,7 @@ async function sendUnlockTransaction(
     )
   ).serializeJson();
 
-  let rollupCell: Cell | undefined;
-  if (process.env.GW_NET === GodwokenNetwork.alphanet as string) {
-    // use gw_get_last_submitted_info to getRollupCell
-    console.log("getRollupCellByGwLastSubmittedInfo");
-    rollupCell = await getRollupCellByGwLastSubmittedInfo();
-  } else {
-    rollupCell = await ckbIndexer.getRollupCell();
-  }
+  const rollupCell = await ckbIndexer.getRollupCell();
   if (rollupCell == null) {
     console.error("[ERROR]: rollupCell not found");
     return;
@@ -132,7 +126,7 @@ async function sendUnlockTransaction(
       }
       if (txWithStatus.tx_status.status === "rejected") {
         clearTimeout(timeoutId);
-        return Promise.reject("UnlockTransaction ${txHash} failed!");
+        return Promise.reject(`UnlockTransaction ${txHash} failed!`);
       }
     } catch (error) {
       console.error("Unknown Error:", error);
@@ -152,12 +146,10 @@ async function unlockFinalizedWithdrawals(
   lockScriptHashMap: Map<string, string>,
   sudtScript?: Script,
 ) {
-  const withdrawalCells: Cell[] = [];
-
   let rollupCell = await ckbIndexer.getRollupCell();
   if (rollupCell == null) {
     console.error("[ERROR]: rollupCell not found");
-    return withdrawalCells;
+    return;
   }
 
   const globalState = new GodwokenSchemas.GlobalState(new Reader(rollupCell.data));
@@ -180,7 +172,7 @@ async function unlockFinalizedWithdrawals(
     type: sudtScript ? sudtScript : "empty",
     argsLen: "any",
     // testnet skip
-    skip: 30, // TODO: this config does not work?
+    // skip: 30, // this config does not work?
   });
   let unFinalizedWithdrawalCellNum = 0;
   const searchTime = 300; // senconds
@@ -216,8 +208,12 @@ async function unlockFinalizedWithdrawals(
 
       console.log("withdrawalCell.out_point", cell.out_point);
       (cell as any).privKey = lockScriptHashMap.get(owner_lock_hash);
-      withdrawalCells.push(cell);
-      if (timeout || withdrawalCells.length >= limit) break;
+      unlockJobs.push(async () => {
+        await asyncSleep(Math.random() * 8000);
+        await retry(() => sendUnlockTransaction(ckbIndexer, [cell]), 6)
+          .catch(console.error);
+      });
+      if (timeout || unlockJobs.length >= limit) break;
     }
   } catch (error) {
     console.error("withdrawalCollector.collect Error:", error);
@@ -227,34 +223,24 @@ async function unlockFinalizedWithdrawals(
     console.timeEnd(`search withdrawal_cells took`);
   }
 
-  if (withdrawalCells.length === 0 && unFinalizedWithdrawalCellNum === 0) {
+  if (unlockJobs.length === 0 && unFinalizedWithdrawalCellNum === 0) {
     console.warn(`No valid withdrawal cell belongs to the accounts found`);
-
   }
-
-  await retry(() => sendUnlockTransaction(ckbIndexer, withdrawalCells), 6)
-    .catch(console.error);
 }
 
 async function batchUnlock(privKeys: string[]) {
   const ckbIndexer = await initConfigAndSync(
     process.env.CKB_RPC_URL || testnetCkbRpcUrl,
-    // FIXME:
-    // Indexer is syncing. Please wait...
-    // Cannot read properties of undefined (reading 'data')
-    // Error: Can't connect to ckb-indexer. Please make sure ckb-indexer is running and its URL is valid and reachable. Make sure the URL begins with http:// or https://.
-    //     at /code/packages/tools/src/account/common.ts:37:15
-    //     at processTicksAndRejections (node:internal/process/task_queues:96:5)
     process.env.CKB_INDEXER_URL || testnetCkbIndexerURL
   );
-  const maxWithdrawalCellNum = 1;
+  const maxWithdrawalCellNum = 100;
   const lockScriptHashMap = getLockScriptHashMap(privKeys);
 
   // TODO: cache the cursor
   asyncSleep(5 * 3600 * 1000).then(() => process.exit(0))
   while (true) {
     console.log('-'.repeat(80));
-    // search finalized withdrawal cell and unlock it
+    // search finalized withdrawal cells
     await unlockFinalizedWithdrawals(
       ckbIndexer,
       maxWithdrawalCellNum,
@@ -262,6 +248,11 @@ async function batchUnlock(privKeys: string[]) {
     ).catch(e => {
       console.error(e);
     });
+
+    // run unlock Jobs
+    console.log("unlockJobs length:", unlockJobs.length);
+    await promiseAllLimitN(8, shuffle(unlockJobs));
+    unlockJobs = [];
   }
 }
 

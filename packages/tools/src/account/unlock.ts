@@ -31,6 +31,7 @@ import { Command } from "commander";
 import { initConfigAndSync } from "./common";
 import { getConfig } from "@ckb-lumos/config-manager";
 import { RPC } from "@ckb-lumos/rpc";
+import { logger } from "../modules/logger";
 
 async function unlock(
   privateKey: HexString,
@@ -321,7 +322,7 @@ async function waitForTxCommitted(
       console.log(`tx ${txHash} committed!`);
       return true;
     }
-    console.log(`current tx status: ${status}, waiting for ${i} seconds`, status);
+    logger.debug(`current tx status: ${status}, waiting for ${i} seconds`, status);
     if (status === "rejected") return false;
     await asyncSleep(loopInterval * 1000);
   }

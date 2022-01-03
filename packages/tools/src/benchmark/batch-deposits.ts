@@ -65,11 +65,16 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
 /**
  * Enviroments:
  * - GW_NET=alphanet|testnet
+ * - DEBUG=true
  * 
  * Usage:
  *   DEBUG=true GW_NET=testnet yarn ts-node src/benchmark/batch-deposits.ts [accountNum]
- *
- * args[0]: account num used to test
+ *   args[0]: account num used to test
+ * 
+ * Example:
+ * ```sh
+ * DEBUG=true GW_NET=testnet yarn ts-node src/benchmark/batch-deposits.ts 4
+ * ```
  */
 (function runTest() {
   const args = process.argv.slice(2);
