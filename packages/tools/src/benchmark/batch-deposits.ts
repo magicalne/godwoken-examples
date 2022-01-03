@@ -1,14 +1,15 @@
 import { deploymentConfig } from "../modules/deployment-config";
 import { Hash } from "@ckb-lumos/base";
-import { initConfigAndSync, waitForDeposit, waitTxCommitted } from "../account/common";
-import { asyncSleep, privateKeyToCkbAddress, privateKeyToEthAddress, retry, } from "../modules/utils";
+import { initConfigAndSync, waitTxCommitted } from "../account/common";
+import { asyncSleep, privateKeyToCkbAddress, privateKeyToEthAddress, promiseAllLimitN, retry, } from "../modules/utils";
 import { getRollupTypeHash } from "../modules/deposit";
-import { getBalanceByScriptHash, ethAddressToScriptHash } from "../modules/godwoken";
+// import { getBalanceByScriptHash, ethAddressToScriptHash } from "../modules/godwoken";
 import { Godwoken } from "@godwoken-examples/godwoken";
 import { sendTx as sendDepositTx } from "../account/deposit-ckb";
 import { privKeys } from "./accounts";
 import { getGodwokenWeb3, GodwokenNetwork, testnetCkbIndexerURL, testnetCkbRpc, testnetCkbRpcUrl } from "../common";
 import { CkbIndexer } from "../account/indexer-remote";
+import { logger } from "../modules/logger";
 
 const MINIMUM_DEPOSIT_CAPACITY = "30000000000"; // 500 CKB
 // const defaultEthAddress = "0x6daf63d8411d6e23552658e3cfb48416a6a2ca78"
@@ -38,10 +39,12 @@ async function deposit(privKey: string, ckbIndexer: CkbIndexer, godwokenRPC: God
       testnetCkbRpcUrl
     );
     console.log("Transaction hash:", txHash);
-    console.log("--------- wait for deposit transaction ----------");
+    logger.debug("--------- wait for deposit transaction ----------");
     await waitTxCommitted(txHash, testnetCkbRpc);
     // await waitForDeposit(godwokenRPC, accountScriptHash, currentBalance);
-  }, 3, 10000);
+  }, 3, 10000).catch(reason => {
+    console.error(`failed to deposit for ${ckbAddress}, reason:`, reason);
+  });
 }
 
 async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
@@ -50,40 +53,31 @@ async function batchDeposits(to: GodwokenNetwork, privKeys: string[]) {
   const indexer = await initConfigAndSync(testnetCkbRpcUrl, testnetCkbIndexerURL);
   let godwokenWeb3: Godwoken = getGodwokenWeb3(to);
 
-  let idx = 0;
-  let depositingNum = 0;
-  const batchNum = 60;
-  while (idx < privKeys.length) {
-    if (depositingNum < batchNum) {
-      depositingNum++;
-      try {
-        deposit(privKeys[idx++], indexer, godwokenWeb3)
-          .catch(console.error)
-          .finally(() => depositingNum--);
-      } catch (e) {
-        console.error(e);
-        depositingNum--;
-      }
-      console.debug(`depositingNum: ${depositingNum} | idx = ${idx}`);
-    }
-    await asyncSleep(100);
-  }
-  while(depositingNum > 0) {
-    console.debug(`depositingNum: ${depositingNum}`);
-    await asyncSleep(1000);
-  }
+  const depositPromises = privKeys.map(privKey => async () => {
+    await asyncSleep(Math.random() * 6000);
+    await deposit(privKey, indexer, godwokenWeb3)
+      .catch(console.error)
+  });
+  await promiseAllLimitN(60, depositPromises).catch(console.error);
   console.log("Deposits finished.");
 }
 
 /**
+ * Enviroments:
+ * - GW_NET=alphanet|testnet
+ * 
+ * Usage:
+ *   DEBUG=true GW_NET=testnet yarn ts-node src/benchmark/batch-deposits.ts [accountNum]
+ *
  * args[0]: account num used to test
  */
 (function runTest() {
   const args = process.argv.slice(2);
   const endIdx = args[0] || privKeys.length;
-  console.log(`\t Using accounts[0..${endIdx}]`);  
+  console.log(`\t Using accounts[0..${endIdx}]`);
 
   console.log("process.env.GW_NET", process.env.GW_NET);
-  batchDeposits((<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
-                privKeys.reverse().slice(0, Number(endIdx)));
+  batchDeposits(
+    (<any>GodwokenNetwork)[process.env.GW_NET || "alphanet"],
+    privKeys.reverse().slice(0, Number(endIdx)));
 })();

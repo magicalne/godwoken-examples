@@ -7,6 +7,7 @@ import { Godwoken } from "@godwoken-examples/godwoken";
 
 import { asyncSleep } from "../modules/utils";
 import { Hash } from "@ckb-lumos/base";
+import { logger } from "../modules/logger";
 
 async function indexerReady(indexer: any, updateProgress=((_indexerTip: bigint, _rpcTip: bigint)=>{}), options: any)
 {
@@ -125,7 +126,7 @@ export async function waitTxCommitted(
     try {
       const txWithStatus = await ckbRpc.get_transaction(txHash);
       const status = txWithStatus.tx_status.status;
-      console.log(`tx ${txHash} is ${status}, waited for ${index} seconds`);
+      logger.debug(`tx ${txHash} is ${status}, waited for ${index} seconds`);
       await asyncSleep(loopInterval * 1000);
       if (status === "committed") {
         console.log(`tx ${txHash} is committed!`);
@@ -155,7 +156,7 @@ export async function waitForDeposit(
   }
 
   for (let i = 0; i < timeout; i += loopInterval) {
-    console.log(
+    logger.debug(
       `Waiting for Layer 2 block producer to collect the deposit cell ... ${i} seconds.`
     );
 

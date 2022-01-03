@@ -322,6 +322,7 @@ async function getRollupCellByGwLastSubmittedInfo(): Promise<Cell> {
  * 
  * Usage:
  * DEBUG=true GW_NET=testnet yarn ts-node src/benchmark/batch-unlock.ts [accountNum]
+ *
  * ```sh
  * # Example:
  * CKB_RPC_URL=http://localhost:18114 CKB_INDEXER_URL=http://localhost:18116 \

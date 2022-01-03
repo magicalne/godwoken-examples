@@ -50,7 +50,7 @@ async function batchWithdrawals(from: GodwokenNetwork, privKeys: string[]) {
     }
   });
 
-  promiseAllLimitN(30, promiseArray).catch(console.error);
+  promiseAllLimitN(60, promiseArray).catch(console.error);
 }
 
 /**
