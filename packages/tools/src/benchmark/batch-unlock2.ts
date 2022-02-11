@@ -43,7 +43,7 @@ async function sendUnlockTransaction(
   console.log("CKB address:", ckbAddress);
   const lockScript = parseAddress(ckbAddress);
 
-  // Build UnlockWithdrawal::UnlockWithdrawalViaFinalize and put into withess
+  // Build UnlockWithdrawal::UnlockWithdrawalViaFinalize and put it into withess
   const data = "0x00000000" + new Reader(
     GodwokenSchemas.SerializeUnlockWithdrawalViaFinalize(
       normalizer.NormalizeUnlockWithdrawalViaFinalize({})
@@ -75,7 +75,7 @@ async function sendUnlockTransaction(
     await asyncSleep(2000);
   }
 
-  // use the fresh rollupCell the construct the transaction
+  // use the fresh rollupCell to construct the transaction
   rollupCell = await ckbIndexer.getRollupCell();
   if (rollupCell == null) {
     console.error("[ERROR]: rollupCell not found");
@@ -136,7 +136,7 @@ async function sendUnlockTransaction(
       const txWithStatus = await ckbRpc.get_transaction(txHash);
       logger.debug(`current tx status: ${txWithStatus.tx_status?.status}`);
       if (txWithStatus.tx_status.status === "committed") {
-        console.log(`UnlockTransaction ${txHash} committed!`);
+        logger.debug(`UnlockTransaction ${txHash} committed!`);
         clearTimeout(timeoutId);
         succeedCount++;
         console.log(`|
@@ -256,24 +256,24 @@ async function batchUnlock(privKeys: string[]) {
   const lockScriptHashMap = getLockScriptHashMap(privKeys);
 
   // search finalized withdrawal cells
+  let isSearchTaskCompleted = false;
   searchFinalizedWithdrawals( // TODO(P-low): cache the cursor
     ckbIndexer,
     lockScriptHashMap
   ).catch(e => {
     console.error(e);
+  }).then(() => {
+    isSearchTaskCompleted = true;
   });
 
   while (true) {
-    await asyncSleep(2000);
-    console.log('-'.repeat(80));
-
     // run unlock Jobs
     const unlockJobs: (() => Promise<void>)[] = [];
     lockScriptHashMap.forEach((withdrawalCellList, key) => {
       const withdrawalCells = withdrawalCellList.withdrawalCells;
       if (withdrawalCells.length > 0) {
         const wCell = withdrawalCells.shift()!;
-        console.log("withdrawalCell.out_point", wCell.out_point);
+        logger.debug("withdrawalCell.out_point", wCell.out_point);
         unlockJobs.push(async () => {
           await asyncSleep(Math.random() * 7220);
           await retry(
@@ -283,7 +283,18 @@ async function batchUnlock(privKeys: string[]) {
         });
       }
     });
-    await promiseAllLimitN(300, unlockJobs);
+
+    if (unlockJobs.length === 0) {
+      if (isSearchTaskCompleted) {
+        console.log("no finalized withdrawal cells to be unlocked");
+        break;
+      }
+      await asyncSleep(6000);
+      continue;
+    }
+
+    console.log(`process ${unlockJobs.length} unlockJobs`);  
+    await promiseAllLimitN(150, unlockJobs);
   }
 }
 
@@ -301,54 +312,19 @@ function getLockScriptHashMap(privKeys: string[]): Map<string, WithdrawalCellLis
   return map;
 }
 
-// async function getRollupCellByGwLastSubmittedInfo(): Promise<Cell> {
-//   const godwokenClient: Godwoken = getGodwokenWeb3(
-//     process.env.GW_NET || GodwokenNetwork.alphanet
-//   );
-  
-//   const result = await godwokenClient.getLastSubmittedInfo();
-//   const txHash = result.transaction_hash;
-//   const ckbRpc = new RPC(process.env.CKB_RPC_URL || testnetCkbRpcUrl);
-//   const tx: TransactionWithStatus | null = await retry(async () => {
-//     const _tx = await ckbRpc.get_transaction(txHash);
-//     return _tx || Promise.reject(null);
-//   }, 10, 1000);
-//   if (tx == null) {
-//     throw new Error("Last submitted tx not found!");
-//   }
-
-//   let rollupIndex = tx.transaction.outputs.findIndex((o) => {
-//     return o.type && utils.computeScriptHash(o.type) === ROLLUP_TYPE_HASH;
-//   });
-//   const rollupOutput = tx.transaction.outputs[rollupIndex];
-//   const rollupOutputData = tx.transaction.outputs_data[rollupIndex];
-
-//   if (rollupOutput == null) {
-//     throw new Error(`Rollup cell not found in last submitted tx!`);
-//   }
-
-//   return {
-//     out_point: {
-//       tx_hash: txHash,
-//       index: "0x" + rollupIndex.toString(16),
-//     },
-//     cell_output: rollupOutput,
-//     data: rollupOutputData,
-//   } as Cell;
-// }
-
 /**
- * Enviroments:
- * CKB_RPC_URL=https://testnet.ckb.dev/rpc
- * CKB_INDEXER_URL=https://testnet.ckb.dev/indexer
- * GW_NET=<GodwokenNetwork or GodwokenWeb3Url>
- * DEBUG=true
+ * Default Enviroments:
+ * - CKB_RPC_URL=https://testnet.ckb.dev/rpc
+ * - CKB_INDEXER_URL=https://testnet.ckb.dev/indexer
+ * - GW_NET=<GodwokenNetwork or GodwokenWeb3Url>, default to testnet
+ * - DEBUG=false
  * 
  * Usage:
  * DEBUG=true GW_NET=testnet yarn ts-node src/benchmark/batch-unlock.ts [accountNum]
  *
  * ```sh
  * # Example:
+ * DEBUG=true \
  * CKB_RPC_URL=http://localhost:18114 CKB_INDEXER_URL=http://localhost:18116 \
  *   GW_NET=alphanet yarn ts-node src/benchmark/batch-unlock.ts 2
  * ```
