@@ -58,12 +58,26 @@ async function unlock(
   }
 }
 
+
+/**
+ * getRollupCell by the ROLLUP_TYPE_SCRIPT of godwoken-config
+ */
+async function getRollupCell(indexer: CkbIndexer): Promise<undefined | Cell> {
+  await indexer.waitForSync();
+  const rollupCells = await indexer.getCells({
+    script: ROLLUP_TYPE_SCRIPT,
+    script_type: ScriptType.type
+  });
+  if (rollupCells.length === 0) return undefined;
+  return rollupCells[0];
+}
+
 const withdrawal_cells: any[] = [];
 /**
  *
  * @param privateKey
  * @param indexer
- * @param rpc
+ * @param ckbRpc
  * @param sudtScript
  *
  * @returns should retry again or not, if true, try again
@@ -71,7 +85,7 @@ const withdrawal_cells: any[] = [];
 async function unlockInner(
   privateKey: HexString,
   indexer: CkbIndexer,
-  rpc: RPC,
+  ckbRpc: RPC,
   sudtScript?: Script
 ): Promise<boolean> {
   const rollup_type_script = ROLLUP_TYPE_SCRIPT;
@@ -86,23 +100,13 @@ async function unlockInner(
 
   // Ready to build L1 CKB transaction
 
-  // * search rollup cell then get last_finalized_block_number from cell data (GlobalState)
-  let rollupCells = await indexer.getCells({
-    script: rollup_type_script,
-    script_type: ScriptType.type
-  });
-
-  let rollup_cell: Cell | undefined = undefined;
-  for await (const cell of rollupCells) {
-    rollup_cell = cell;
-    break;
-  }
-
-  if (rollup_cell == null) {
+  // search rollup cell and then get last_finalized_block_number from cell data (GlobalState) 
+  let rollupCell = await getRollupCell(indexer);
+  if (rollupCell == null) {
     console.error("[ERROR]: rollup_cell not found");
     exit(-1);
   }
-  const globalState = new GodwokenSchemas.GlobalState(new Reader(rollup_cell.data));
+  const globalState = new GodwokenSchemas.GlobalState(new Reader(rollupCell.data));
   const last_finalized_block_number = globalState
     .getLastFinalizedBlockNumber()
     .toLittleEndianBigUint64();
@@ -191,20 +195,29 @@ async function unlockInner(
     )
   ).serializeJson();
 
-  // fetch rollup cell again
+  // fetch the fresh rollupCell
   await indexer.waitForSync();
-  rollupCells = await indexer.getCells({
-    script: rollup_type_script,
-    script_type: ScriptType.type
-  });
-  if (rollupCells.length === 0) {
+  rollupCell = await getRollupCell(indexer);
+  if (rollupCell == null) {
     console.error("[ERROR]: rollup_cell not found");
     exit(-1);
   }
-  rollup_cell = rollupCells[0];
+  while (true) { // wait for the next live rollupCell
+    const result = await ckbRpc.get_live_cell(rollupCell!.out_point!, false);
+    if (result.status !== 'live') {
+      break;
+    }
+    await asyncSleep(2000);
+  }
+  rollupCell = await getRollupCell(indexer);
+  if (rollupCell == null) {
+    console.error("[ERROR]: rollup_cell not found");
+    exit(-1);
+  }
+
   // use rollup cell's out point as cell_deps
   const rollup_cell_dep: CellDep = {
-    out_point: rollup_cell.out_point!,
+    out_point: rollupCell.out_point!,
     dep_type: "code",
   };
 
@@ -251,12 +264,12 @@ async function unlockInner(
   const tx = sealTransaction(txSkeleton, [content]);
 
   let txHash: Hash | undefined = await retry(async function sendUnlockTransaction() {
-    return rpc.send_transaction(tx, "passthrough");
+    return ckbRpc.send_transaction(tx, "passthrough");
   }).catch(e => { return undefined; })
   console.log("txHash:", txHash);
   if (!txHash) return true; /* return true to external unlock function */
 
-  const isSuccess = await waitForTxCommitted(rpc, tx, txHash);
+  const isSuccess = await waitForTxCommitted(ckbRpc, tx, txHash);
   if (isSuccess === false) {
     return true;
   }
