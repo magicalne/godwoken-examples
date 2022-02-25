@@ -16,10 +16,16 @@ export const CKB_SUDT_ID = 1;
 export enum GodwokenNetwork {
   alphanet = 'alphanet',
   testnet = 'testnet',
+  testnet_v1 = 'testnet_v1'
 }
 
+export const testnet_v1Web3Url = "https://godwoken-testnet-web3-v1-rpc.ckbapp.dev";
 export const testnetWeb3Url = "https://godwoken-testnet-web3-rpc.ckbapp.dev";
 export const alphanetWeb3Url = "https://rpc-staging.ckbapp.dev";
+/**
+ * @param web3 GodwokenNetwork | Web3UrlString
+ * @returns 
+ */
 export function getGodwokenWeb3(web3: GodwokenNetwork | string): GodwokenWeb3 {
   console.log("init GodwokenWeb3:", web3);
   let gwWeb3: GodwokenWeb3;
@@ -29,6 +35,9 @@ export function getGodwokenWeb3(web3: GodwokenNetwork | string): GodwokenWeb3 {
       break;
     case GodwokenNetwork.testnet:
       gwWeb3 = new GodwokenWeb3(testnetWeb3Url);
+      break;
+    case GodwokenNetwork.testnet_v1:
+      gwWeb3 = new GodwokenWeb3(testnet_v1Web3Url);
       break;
     default:
       console.warn("Undefined GodwokenNetwork");

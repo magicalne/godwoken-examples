@@ -13,7 +13,7 @@ export interface DeploymentConfig {
   eth_account_lock: Script;
   polyjuice_validator: Script;
   state_validator_lock: Script;
-  poa_state: Script;
+  poa_state: Script | undefined;
 
   custodian_lock_dep: CellDep;
   deposit_lock_dep: CellDep;
@@ -26,7 +26,7 @@ export interface DeploymentConfig {
   eth_account_lock_dep: CellDep;
   polyjuice_validator_dep: CellDep;
   state_validator_lock_dep: CellDep;
-  poa_state_dep: CellDep;
+  poa_state_dep: CellDep | undefined;
 }
 
 const config = deployResult;
@@ -58,9 +58,10 @@ export const deploymentConfig: DeploymentConfig = {
     config.polyjuice_validator.script_type_hash
   ),
   state_validator_lock: buildScriptFromCodeHash(
-    config.state_validator_lock.script_type_hash
+    (config.state_validator_lock || config.state_validator).script_type_hash
   ),
-  poa_state: buildScriptFromCodeHash(config.poa_state.script_type_hash),
+  poa_state: !config.poa_state ? undefined : buildScriptFromCodeHash(
+    config.poa_state.script_type_hash),
 
   deposit_lock_dep: config.deposit_lock.cell_dep as CellDep,
   custodian_lock_dep: config.custodian_lock.cell_dep as CellDep,
@@ -74,7 +75,8 @@ export const deploymentConfig: DeploymentConfig = {
   eth_account_lock_dep: config.eth_account_lock.cell_dep as CellDep,
   polyjuice_validator_dep: config.polyjuice_validator.cell_dep as CellDep,
   state_validator_lock_dep: config.state_validator.cell_dep as CellDep,
-  poa_state_dep: config.poa_state.cell_dep as CellDep,
+
+  poa_state_dep: !config.poa_state ? undefined : config.poa_state.cell_dep as CellDep,
 };
 
 function buildScriptFromCodeHash(codeHash: string): Script {

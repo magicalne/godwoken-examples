@@ -1,0 +1,247 @@
+{
+  "node_mode": "fullnode",
+  "backends": [
+    {
+      "validator_path": "/scripts/godwoken-scripts/meta-contract-validator",
+      "generator_path": "/scripts/godwoken-scripts/meta-contract-generator",
+      "validator_script_type_hash": "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0",
+      "backend_type": "Meta"
+    },
+    {
+      "validator_path": "/scripts/godwoken-scripts/sudt-validator",
+      "generator_path": "/scripts/godwoken-scripts/sudt-generator",
+      "validator_script_type_hash": "0x4e55cb08c3c772414e364aa5ed26609cfd3ee6619a2bb78c3bafa6f2f41b16b3",
+      "backend_type": "Sudt"
+    },
+    {
+      "validator_path": "/scripts/godwoken-polyjuice/validator",
+      "generator_path": "/scripts/godwoken-polyjuice/generator.aot",
+      "validator_script_type_hash": "0x848753a2b16c63682c7de4e6cc7167890ff3f821d61328f45386d91ece54373e",
+      "backend_type": "Polyjuice"
+    },
+    {
+      "validator_path": "/scripts/godwoken-polyjuice/eth_addr_reg_validator",
+      "generator_path": "/scripts/godwoken-polyjuice/eth_addr_reg_generator",
+      "validator_script_type_hash": "0xdcd504b209ebae865799e4a51b7de45ef9919888438c17e6dde38b4d0a37615d",
+      "backend_type": "EthAddrReg"
+    }
+  ],
+  "genesis": {
+    "timestamp": 1645630288437,
+    "rollup_type_hash": "0xbd3f6ca6bdc273f1699e67a7b72cae0e0a7250646f168d03adab3892b5e2cfef",
+    "meta_contract_validator_type_hash": "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0",
+    "rollup_config": {
+      "l1_sudt_script_type_hash": "0xc5e5dcf215925f7ef4dfaf5f4b4f105bc321c02776d6e7d52a1db3fcd9d011a4",
+      "custodian_script_type_hash": "0xb2cc7d0c6d3d300ca83a3c741212503049f3f778fc17755d490df3f6989135ee",
+      "deposit_script_type_hash": "0x6f46d7c451d63e584e60e6a748662df044e4ada30291e0d35aa1d0ddb1237f40",
+      "withdrawal_script_type_hash": "0xc897744bffee22bae91afdf581e396d5d1f34313d2aa1b3fa8121e561f2bae59",
+      "challenge_script_type_hash": "0x0c06baa572892dff42962e0f79d957a57ba67968133d98dac9f00f9f627f7bf4",
+      "stake_script_type_hash": "0x81d860980c6fa3c8c831a4c995fe4823da46f6d652e587ebd7b55f9bf906d158",
+      "l2_sudt_validator_script_type_hash": "0x4e55cb08c3c772414e364aa5ed26609cfd3ee6619a2bb78c3bafa6f2f41b16b3",
+      "burn_lock_hash": "0x77c93b0632b5b6c3ef922c5b7cea208fb0a7c427a13d50e13d3fefad17e0c590",
+      "required_staking_capacity": "0x9184e72a000",
+      "challenge_maturity_blocks": "0x1c2",
+      "finality_blocks": "0x32",
+      "reward_burn_rate": "0x32",
+      "compatible_chain_id": "0x315da",
+      "allowed_eoa_type_hashes": [
+        {
+          "type_": "eth",
+          "hash": "0x6ac8027edfd86557a0b02fb8b9dce9ffc2bb2ac0b2f0352f74912bb546dc374c"
+        },
+        {
+          "type_": "tron",
+          "hash": "0xa289d7e6f46ae922a57691b42ce7b8ff9387f5d18ccce0287e14916a03cae51c"
+        }
+      ],
+      "allowed_contract_type_hashes": [
+        {
+          "type_": "meta",
+          "hash": "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0"
+        },
+        {
+          "type_": "sudt",
+          "hash": "0x4e55cb08c3c772414e364aa5ed26609cfd3ee6619a2bb78c3bafa6f2f41b16b3"
+        },
+        {
+          "type_": "polyjuice",
+          "hash": "0x848753a2b16c63682c7de4e6cc7167890ff3f821d61328f45386d91ece54373e"
+        },
+        {
+          "type_": "eth_addr_reg",
+          "hash": "0xdcd504b209ebae865799e4a51b7de45ef9919888438c17e6dde38b4d0a37615d"
+        }
+      ]
+    },
+    "secp_data_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x8f8c79eb6671709633fe6a46de93c0fedc9c1b8a6527a18d3983879542635c9f",
+        "index": "0x3"
+      }
+    }
+  },
+  "chain": {
+    "skipped_invalid_block_list": [],
+    "genesis_committed_info": {
+      "number": "0x44a97e",
+      "block_hash": "0xc2130bb9187a08b4b08325747ed429966097f23529beeaf168392a6147a17bc8",
+      "transaction_hash": "0x5a3bac0c841efeb4c836fb73f53d74b9fe14e28228465f0397cd824ceb0866fe"
+    },
+    "rollup_type_script": {
+      "code_hash": "0x3949a52e86048d6184641e7e441c543097559829daa9f60b7ee137031123ef24",
+      "hash_type": "type",
+      "args": "0xd35def1737c65ef34969c6cc93d5b87841434024e15d58693ea054059b58fc8d"
+    }
+  },
+  "rpc_client": {
+    "indexer_url": "http://172.17.0.1:18116",
+    "ckb_url": "http://172.17.0.1:38114"
+  },
+  "rpc_server": {
+    "listen": "0.0.0.0:8119",
+    "enable_methods": []
+  },
+  "debug": {
+    "output_l1_tx_cycles": true,
+    "expected_l1_tx_upper_bound_cycles": 70000000,
+    "debug_tx_dump_path": "/mnt/debug-tx-dump",
+    "enable_debug_rpc": false
+  },
+  "block_producer": {
+    "account_id": 0,
+    "check_mem_block_before_submit": false,
+    "rollup_config_cell_dep": {
+      "dep_type": "code",
+      "out_point": {
+        "tx_hash": "0x4777742e7d03d0392b971f4d22ea60bf576ad17f4721c80c54d3b0d4d1036925",
+        "index": "0x0"
+      }
+    },
+    "challenger_config": {
+      "rewards_receiver_lock": {
+        "code_hash": "0x49027a6b9512ef4144eb41bc5559ef2364869748e65903bd14da08c3425c0503",
+        "hash_type": "type",
+        "args": "0x0000000000000000000000000000000000000001"
+      },
+      "burn_lock": {
+        "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "hash_type": "data",
+        "args": "0x"
+      }
+    },
+    "wallet_config": {
+      "privkey_path": "/deploy/pk",
+      "lock": {
+        "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "hash_type": "type",
+        "args": "0x5619a2b220d667c7be4cc44d9fd6a3aac20fa122"
+      }
+    }
+  },
+  "eth_eoa_mapping_config": {
+    "register_wallet_config": {
+      "privkey_path": "/deploy/pk",
+      "lock": {
+        "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "hash_type": "type",
+        "args": "0x5619a2b220d667c7be4cc44d9fd6a3aac20fa122"
+      }
+    }
+  },
+  "mem_pool": {
+    "execute_l2tx_max_cycles": 100000000,
+    "restore_path": "/mnt/mem-pool/mem-block"
+  },
+  "store": {
+    "path": "/mnt/store20220224.db",
+    "options_file": "/deploy/db.toml",
+    "cache_size": 536870912,
+    "options": {}
+  },
+  "consensus": {
+    "contract_type_scripts": {
+      "state_validator": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0x252bea6ca859451c94889e6dffb461e104d3c5ad74dcecf10a76c94649b169be"
+      },
+      "deposit_lock": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0x89c88200d7a1959e5504c4fec5811977f77820bc85677f949cb9ef098fce88d4"
+      },
+      "stake_lock": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0xc0ea56c09a1e56711a74ff7baa6a80c941a0ef1f3f9227e1751683c696ea0253"
+      },
+      "custodian_lock": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0xd270701a2da20460138380c0f553f5fd5b54ecc0a958f06cd1e50c56c61667d9"
+      },
+      "withdrawal_lock": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0x0660ea438d782135723f9c6be10740e83b928a500065b15eeaf6009dfc08a20f"
+      },
+      "challenge_lock": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0xab6ed2e4a044d4ee0cd4edeabed56722b6e61417fb2324011f2624672d0ff171"
+      },
+      "l1_sudt": {
+        "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+        "hash_type": "type",
+        "args": "0x4db75e03349f4f2ec792476035dd1b7376c683130f7e2e74024be2d9ee064511"
+      },
+      "allowed_eoa_scripts": {
+        "0xa289d7e6f46ae922a57691b42ce7b8ff9387f5d18ccce0287e14916a03cae51c": {
+          "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+          "hash_type": "type",
+          "args": "0x48ec1103069d37ef7059c2741cd9e805067c880ab68adb73bcd89cb5b065cb69"
+        },
+        "0x6ac8027edfd86557a0b02fb8b9dce9ffc2bb2ac0b2f0352f74912bb546dc374c": {
+          "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+          "hash_type": "type",
+          "args": "0x5b97b4830f96422a414db0711b005e5dca559a6b9a6f249436cb7915787fbefb"
+        }
+      },
+      "allowed_contract_scripts": {
+        "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0": {
+          "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+          "hash_type": "type",
+          "args": "0xc5f9ac1951d73a43846d91822aaeeed1e79d6dfb5ce846bc2ddea6e2e44e2f0b"
+        },
+        "0x4e55cb08c3c772414e364aa5ed26609cfd3ee6619a2bb78c3bafa6f2f41b16b3": {
+          "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+          "hash_type": "type",
+          "args": "0xcf9747903f5a3844bbc3b54a06f769a630c6b5364f476665ec9d257a39e4f5f1"
+        },
+        "0xdcd504b209ebae865799e4a51b7de45ef9919888438c17e6dde38b4d0a37615d": {
+          "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+          "hash_type": "type",
+          "args": "0xb85cadac0912a54f5a404b41c6f6cc389a0b0af0e6d32cf6bb5f0306711e4064"
+        },
+        "0x848753a2b16c63682c7de4e6cc7167890ff3f821d61328f45386d91ece54373e": {
+          "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
+          "hash_type": "type",
+          "args": "0x5b0f7f1ba99f8e4934be8cef92fa33fbae693e41e079b013f122a78fd4962ec1"
+        }
+      }
+    }
+  },
+  "dynamic_config": {
+    "fee_config": {
+      "meta_cycles_limit": 20000,
+      "sudt_cycles_limit": 20000,
+      "eth_addr_reg_cycles_limit": 20000,
+      "withdraw_cycles_limit": 20000
+    },
+    "rpc_config": {
+      "allowed_sudt_proxy_creator_account_id": [],
+      "sudt_proxy_code_hashes": []
+    }
+  }
+}
