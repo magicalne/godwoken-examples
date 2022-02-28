@@ -1076,6 +1076,20 @@
     return array.buffer;
   }
 
+  function SerializeRawWithdrawalRequestV1(value) {
+    const array = new Uint8Array(0 + Uint32.size() + Uint64.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Byte32.size() + Uint64.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeUint32(value.nonce)), 0);
+    array.set(new Uint8Array(SerializeUint64(value.chain_id)), 0 + Uint32.size());
+    array.set(new Uint8Array(SerializeUint64(value.capacity)), 0 + Uint32.size() + Uint64.size());
+    array.set(new Uint8Array(SerializeUint128(value.amount)), 0 + Uint32.size() + Uint64.size() + Uint64.size());
+    array.set(new Uint8Array(SerializeByte32(value.sudt_script_hash)), 0 + Uint32.size() + Uint64.size() + Uint64.size() + Uint128.size());
+    array.set(new Uint8Array(SerializeByte32(value.account_script_hash)), 0 + Uint32.size() + Uint64.size() + Uint64.size() + Uint128.size() + Byte32.size());
+    array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0 + Uint32.size() + Uint64.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size());
+    array.set(new Uint8Array(SerializeUint64(value.fee)), 0 + Uint32.size() + Uint64.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Byte32.size());
+    return array.buffer;
+  }
+
   class WithdrawalRequestVec {
     constructor(reader, { validate = true } = {}) {
       this.view = new DataView(assertArrayBuffer(reader));

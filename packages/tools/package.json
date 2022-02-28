@@ -13,6 +13,7 @@
     "@ckb-lumos/helpers": "^0.18.0-rc1",
     "@ckb-lumos/rpc": "^0.18.0-rc1",
     "@godwoken-examples/godwoken": "^0.0.1",
+    "@metamask/eth-sig-util": "^4.0.0",
     "axios": "^0.21.1",
     "ckb-js-toolkit": "^0.10.2",
     "commander": "^6.2.1",

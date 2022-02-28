@@ -1,4 +1,4 @@
-import { HexString, utils } from "@ckb-lumos/base";
+import { HexString, Script, utils } from "@ckb-lumos/base";
 import { generateAddress, parseAddress } from "@ckb-lumos/helpers";
 import { key } from "@ckb-lumos/hd";
 import { getConfig } from "@ckb-lumos/config-manager";
@@ -6,15 +6,20 @@ import crypto from "crypto";
 import keccak256 from "keccak256";
 import { Address } from "@ckb-lumos/base";
 
-export function privateKeyToCkbAddress(privateKey: HexString): Address {
+export function privKeyToLockScript(privateKey: HexString): Script {
   const publicKey = key.privateToPublic(privateKey);
   const publicKeyHash = key.publicKeyToBlake160(publicKey);
   const scriptConfig = getConfig().SCRIPTS.SECP256K1_BLAKE160!;
-  const script = {
+  const script: Script = {
     code_hash: scriptConfig.CODE_HASH,
     hash_type: scriptConfig.HASH_TYPE,
     args: publicKeyHash,
   };
+  return script;
+}
+
+export function privateKeyToCkbAddress(privateKey: HexString): Address {
+  const script = privKeyToLockScript(privateKey);
   const address = generateAddress(script);
   return address;
 }

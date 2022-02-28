@@ -10,8 +10,8 @@ import {
 import {
   L2Transaction,
   RawL2Transaction,
-  RawWithdrawalRequest,
-  WithdrawalRequest,
+  RawWithdrawalRequest, WithdrawalRequest,
+  WithdrawalRequestExtra,
   RunResult,
   Uint128,
   Uint32,
@@ -19,12 +19,16 @@ import {
   Fee,
   LastL2BlockCommittedInfo,
 } from "./types";
+export * from "./types";
 import keccak256 from "keccak256";
 
 import * as core from "../schemas";
+import {
+  SerializeRawWithdrawalRequestV1, SerializeWithdrawalRequestExtra
+} from "./schema_v1";
+
 import * as normalizer from "./normalizer";
-export { core, normalizer };
-export * from "./types";
+export { core, normalizer, SerializeRawWithdrawalRequestV1, WithdrawalRequestExtra };
 
 export function numberToUInt32LE(value: number): HexString {
   const buf = Buffer.alloc(4);
@@ -55,7 +59,7 @@ export function toBuffer(ab: ArrayBuffer): Buffer {
   return buf;
 }
 
-function toArrayBuffer(buf: Buffer) {
+export function toArrayBuffer(buf: Buffer) {
   const ab = new ArrayBuffer(buf.length);
   const view = new Uint8Array(ab);
   for (let i = 0; i < buf.length; ++i) {
@@ -69,6 +73,17 @@ export class Godwoken {
 
   constructor(url: string) {
     this.rpc = new RPC(url);
+  }
+
+  /**
+   * chain_id: u64 = (compatible_chain_id << 32) | creator_id
+   * 
+   * e.g. 0x315DA00000005 = 868,450,977,185,797
+   */
+  async getChainId(): Promise<string> {
+    const result = await this.rpc['eth_chainId']();
+    console.debug("chain_id:", result);
+    return result;
   }
 
   private async rpcCall(method_name: string, ...args: any[]): Promise<any> {
@@ -105,6 +120,18 @@ export class Godwoken {
     ).serializeJson();
     return await this.rpcCall("submit_withdrawal_request", data);
   }
+
+  async submitWithdrawalReqV1(reqExtra: WithdrawalRequestExtra): Promise<Hash> {
+    const data = new Reader(
+      SerializeWithdrawalRequestExtra(normalizer.NormalizeWithdrawalReqExtra(reqExtra))
+    ).serializeJson();
+    return await this.rpcCall("submit_withdrawal_request", data);
+  }
+
+  // TODO
+  // async function getWithdrawal(withdrawalHash: Hash) {
+  //   withdrawal_hash
+  // }
 
   async getScriptHashByShortAddress(address: HexString): Promise<Hash> {
     return await this.rpcCall("get_script_hash_by_short_address", address);

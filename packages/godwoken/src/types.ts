@@ -56,6 +56,32 @@ export interface WithdrawalRequest {
   raw: RawWithdrawalRequest;
   signature: HexString;
 }
+
+export interface RawWithdrawalRequestV1 {
+  nonce: HexNumber;
+  chain_id: HexNumber;
+  // CKB amount
+  capacity: HexNumber;
+  // SUDT amount
+  amount: HexNumber;
+  sudt_script_hash: Hash;
+  // layer2 account_script_hash
+  account_script_hash: Hash;
+  // layer1 lock to withdraw after challenge period
+  owner_lock_hash: Hash;
+  fee: HexNumber;
+}
+
+export interface WithdrawalRequestV1 {
+  raw: RawWithdrawalRequestV1;
+  signature: HexString;
+}
+
+export interface WithdrawalRequestExtra {
+  request: WithdrawalRequestV1;
+  owner_lock: Script;
+}
+
 export interface WithdrawalLockArgs {
   // layer2 account script hash
   account_script_hash: Hash;

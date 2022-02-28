@@ -190,7 +190,7 @@ export async function transferCLI(
   return txHash;
 }
 
-function signMessage(message: string, privkey: string) {
+export function signMessage(message: string, privkey: string) {
   const signObject = secp256k1.ecdsaSign(
     new Uint8Array(new Reader(message).toArrayBuffer()),
     new Uint8Array(new Reader(privkey).toArrayBuffer())
@@ -207,15 +207,9 @@ export async function privateKeyToAccountId(
   privateKey: HexString
 ): Promise<number | undefined> {
   const ethAddress = privateKeyToEthAddress(privateKey);
-  const script = {
-    ...deploymentConfig.eth_account_lock,
-    args: ROLLUP_TYPE_HASH + ethAddress.slice(2),
-  };
-
+  const script: Script = ethAddrToScript(ethAddress);
   const scriptHash = utils.computeScriptHash(script);
-
   const id = await godwoken.getAccountIdByScriptHash(scriptHash);
-
   return id;
 }
 
@@ -223,10 +217,7 @@ export function privateKeyToShortAddress(
   privateKey: HexString
 ): HexString | undefined {
   const ethAddress = privateKeyToEthAddress(privateKey);
-  const script = {
-    ...deploymentConfig.eth_account_lock,
-    args: ROLLUP_TYPE_HASH + ethAddress.slice(2),
-  };
+  const script: Script = ethAddrToScript(ethAddress);
   const scriptHash = utils.computeScriptHash(script);
   const shortAddress = scriptHash.slice(0, 42);
   return shortAddress;
@@ -234,24 +225,22 @@ export function privateKeyToShortAddress(
 
 export function privateKeyToScriptHash(privateKey: HexString): Hash {
   const ethAddress = privateKeyToEthAddress(privateKey);
-  const script = {
-    ...deploymentConfig.eth_account_lock,
-    args: ROLLUP_TYPE_HASH + ethAddress.slice(2),
-  };
-
+  const script: Script = ethAddrToScript(ethAddress);
   const scriptHash = utils.computeScriptHash(script);
-
   return scriptHash;
 }
 
-export function ethAddressToScriptHash(ethAddress: HexString): Hash {
-  const script = {
+export function ethAddrToScript(ethAddress: HexString): Script {
+  const script: Script = {
     ...deploymentConfig.eth_account_lock,
     args: ROLLUP_TYPE_HASH + ethAddress.slice(2),
   };
+  return script;
+}
 
+export function ethAddressToScriptHash(ethAddress: HexString): Hash {
+  const script: Script = ethAddrToScript(ethAddress);
   const scriptHash = utils.computeScriptHash(script);
-
   return scriptHash;
 }
 

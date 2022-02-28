@@ -6,7 +6,9 @@ import {
   Script,
 } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
-import { L2Transaction, WithdrawalRequest } from "./types";
+import { L2Transaction,
+  WithdrawalRequest, WithdrawalRequestExtra, WithdrawalRequestV1
+} from "./types";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
 // later we can think about exposing those functions directly.
@@ -178,6 +180,47 @@ export function NormalizeRawWithdrawalRequest(
     owner_lock_hash: normalizeRawData(32),
     payment_lock_hash: normalizeRawData(32),
     fee: toNormalize(NormalizeFee),
+  });
+}
+
+export function NormalizeRawWithdrawalRequestV1(
+  raw_request_v1: object,
+  { debugPath = "raw_withdrawal_request" } = {}
+) {
+  return normalizeObject(debugPath, raw_request_v1, {
+    nonce: normalizeHexNumber(4),
+    chain_id: normalizeHexNumber(8),
+    // CKB amount
+    capacity: normalizeHexNumber(8),
+    // SUDT amount
+    amount: normalizeHexNumber(16),
+    sudt_script_hash: normalizeRawData(32),
+    // layer2 account_script_hash
+    account_script_hash: normalizeRawData(32),
+    // layer1 lock to withdraw after challenge period
+    owner_lock_hash: normalizeRawData(32),
+    // withdrawal fee, paid to block producer
+    fee: normalizeHexNumber(8),
+  });
+}
+
+export function NormalizeWithdrawalRequestV1(
+  request_v1: WithdrawalRequestV1,
+  { debugPath = "withdrawal_request" } = {}
+) {
+  return normalizeObject(debugPath, request_v1, {
+    raw: toNormalize(NormalizeRawWithdrawalRequestV1),
+    signature: normalizeRawData(65),
+  });
+}
+
+export function NormalizeWithdrawalReqExtra(
+  withdrawalReqExtra: WithdrawalRequestExtra,
+  { debugPath = "withdrawal_request" } = {}
+) {
+  return normalizeObject(debugPath, withdrawalReqExtra, {
+    request: toNormalize(NormalizeWithdrawalRequestV1),
+    owner_lock: toNormalize(normalizers.NormalizeScript),
   });
 }
 
