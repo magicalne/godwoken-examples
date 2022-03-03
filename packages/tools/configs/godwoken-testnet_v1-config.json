@@ -1,5 +1,5 @@
 {
-  "node_mode": "fullnode",
+  "node_mode": "readonly",
   "backends": [
     {
       "validator_path": "/scripts/godwoken-scripts/meta-contract-validator",
@@ -27,8 +27,8 @@
     }
   ],
   "genesis": {
-    "timestamp": 1645630288437,
-    "rollup_type_hash": "0xbd3f6ca6bdc273f1699e67a7b72cae0e0a7250646f168d03adab3892b5e2cfef",
+    "timestamp": 1646280489327,
+    "rollup_type_hash": "0x9248c2ae34e8243ed30b311b0047a2691889f6d231b3991ee0ef5516c13547f4",
     "meta_contract_validator_type_hash": "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0",
     "rollup_config": {
       "l1_sudt_script_type_hash": "0xc5e5dcf215925f7ef4dfaf5f4b4f105bc321c02776d6e7d52a1db3fcd9d011a4",
@@ -84,14 +84,14 @@
   "chain": {
     "skipped_invalid_block_list": [],
     "genesis_committed_info": {
-      "number": "0x44a97e",
-      "block_hash": "0xc2130bb9187a08b4b08325747ed429966097f23529beeaf168392a6147a17bc8",
-      "transaction_hash": "0x5a3bac0c841efeb4c836fb73f53d74b9fe14e28228465f0397cd824ceb0866fe"
+      "number": "0x45e683",
+      "block_hash": "0x6fe6fcf01949c7a815c3fece911d15998367a6d501d1f37af29b8e6c96687449",
+      "transaction_hash": "0x148527c8a4d186092ca0f19f678778ec0b4a8fbc9237595087ba071890c1936a"
     },
     "rollup_type_script": {
       "code_hash": "0x3949a52e86048d6184641e7e441c543097559829daa9f60b7ee137031123ef24",
       "hash_type": "type",
-      "args": "0xd35def1737c65ef34969c6cc93d5b87841434024e15d58693ea054059b58fc8d"
+      "args": "0x7bc392cb47328266fb53e3c09486424f30c473703c250cbd2fb97a58299e0636"
     }
   },
   "rpc_client": {
@@ -114,7 +114,7 @@
     "rollup_config_cell_dep": {
       "dep_type": "code",
       "out_point": {
-        "tx_hash": "0x4777742e7d03d0392b971f4d22ea60bf576ad17f4721c80c54d3b0d4d1036925",
+        "tx_hash": "0xb2ec1e1c30b89656045a201e92d43feb8b8ca74b6d7d479ec14938879314d4b0",
         "index": "0x0"
       }
     },
@@ -154,7 +154,7 @@
     "restore_path": "/mnt/mem-pool/mem-block"
   },
   "store": {
-    "path": "/mnt/store20220224.db",
+    "path": "/mnt/store20220303.db",
     "options_file": "/deploy/db.toml",
     "cache_size": 536870912,
     "options": {}
@@ -209,20 +209,20 @@
         }
       },
       "allowed_contract_scripts": {
-        "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0": {
+        "0xdcd504b209ebae865799e4a51b7de45ef9919888438c17e6dde38b4d0a37615d": {
           "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
           "hash_type": "type",
-          "args": "0xc5f9ac1951d73a43846d91822aaeeed1e79d6dfb5ce846bc2ddea6e2e44e2f0b"
+          "args": "0xb85cadac0912a54f5a404b41c6f6cc389a0b0af0e6d32cf6bb5f0306711e4064"
         },
         "0x4e55cb08c3c772414e364aa5ed26609cfd3ee6619a2bb78c3bafa6f2f41b16b3": {
           "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
           "hash_type": "type",
           "args": "0xcf9747903f5a3844bbc3b54a06f769a630c6b5364f476665ec9d257a39e4f5f1"
         },
-        "0xdcd504b209ebae865799e4a51b7de45ef9919888438c17e6dde38b4d0a37615d": {
+        "0x4a8ef5f6b366cb84e362dc747c314e32d5e2f1a6f64d118eaec6df2c36512ac0": {
           "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",
           "hash_type": "type",
-          "args": "0xb85cadac0912a54f5a404b41c6f6cc389a0b0af0e6d32cf6bb5f0306711e4064"
+          "args": "0xc5f9ac1951d73a43846d91822aaeeed1e79d6dfb5ce846bc2ddea6e2e44e2f0b"
         },
         "0x848753a2b16c63682c7de4e6cc7167890ff3f821d61328f45386d91ece54373e": {
           "code_hash": "0x00000000000000000000000000000000000000000000000000545950455f4944",

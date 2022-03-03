@@ -114,7 +114,7 @@
     "script_type_hash": "0xdcd504b209ebae865799e4a51b7de45ef9919888438c17e6dde38b4d0a37615d",
     "cell_dep": {
       "out_point": {
-        "tx_hash": "0xcaeef6f3a63701978b56b5e17d24d09ef8c4879345f7579131c8a05fc22cd1e9",
+        "tx_hash": "0x291b5400856eb58d5132768215ffcf23a490818d31371f33fc6e64b711effb94",
         "index": "0x0"
       },
       "dep_type": "code"
