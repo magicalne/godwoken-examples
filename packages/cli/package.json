@@ -1,0 +1,39 @@
+{
+  "name": "@godwoken-examples/cli",
+  "version": "0.0.1",
+  "description": "An alternative for gw-tools",
+  "license": "MIT",
+  "dependencies": {
+    "@ckb-lumos/lumos": "^0.18.0-rc7",
+    "@ckb-lumos/base": "^0.18.0-rc7",
+    "@ckb-lumos/common-scripts": "^0.18.0-rc7",
+    "@ckb-lumos/config-manager": "^0.18.0-rc7",
+    "@ckb-lumos/hd": "^0.18.0-rc7",
+    "@ckb-lumos/helpers": "^0.18.0-rc7",
+    "@ckb-lumos/rpc": "^0.18.0-rc7",
+    "@ckb-lumos/toolkit": "^0.18.0-rc7",
+    "@ckb-lumos/config-manager": "^0.18.0-rc7",
+    "@godwoken-examples/godwoken": "^0.0.1",
+    "@metamask/eth-sig-util": "^4.0.0",
+    "commander": "^6.2.1",
+    "secp256k1": "^4.0.2",
+    "@iarna/toml": "^2.2.5",
+    "@types/secp256k1": "^4.0.2",
+    "envfile": "^6.17.0",
+    "puppeteer": "^12.0.1",
+    "@types/puppeteer": "^5.4.4"
+  },
+  "scripts": {
+    "fmt": "prettier --write \"src/**/*.ts\" package.json",
+    "build": "tsc",
+    "help": "ts-node-script -s src/index.ts help",
+    "version": "ts-node-script -s src/index.ts --version",
+    "get-balance": "ts-node-script -s src/index.ts get-balance",
+    "deposit": "ts-node-script -s src/index.ts deposit",
+    "batch-deposit": "ts-node-script -s src/index.ts batch-deposit",
+    "batch-withdraw": "ts-node-script -s src/index.ts batch-withdraw",
+    "withdraw": "ts-node-script -s src/index.ts withdraw",
+    "unlock": "ts-node-script -s src/index.ts unlock",
+    "faucet": "ts-node-script -s src/index.ts faucet"
+  }
+}
