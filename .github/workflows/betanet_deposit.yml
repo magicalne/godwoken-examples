@@ -1,4 +1,4 @@
-name: Testnet Faucet
+name: Betanet Batch Deposit
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
   - cron:  '50 12 * * *'
 
 jobs:
-  faucet:
+  deposit:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -37,7 +37,7 @@ jobs:
         cd packages/cli
         yarn
         
-    - name: yarn run unlock
+    - name: yarn run deposit
       run: |
         cd packages/cli
         ROLLUP_CODE_HASH=0x1e44736436b406f8e48a30dfbddcf044feb0c9eebfe63b0f81cb5bb727d84854 \
@@ -46,7 +46,7 @@ jobs:
         GODWOKEN_WEB3_URL=https://godwoken-betanet-v1.ckbapp.dev \
         CKB_RPC_URL=https://testnet.ckb.dev \
         CKB_INDEXER_URL=https://testnet.ckb.dev/indexer \
-        yarn run unlock --private-key $(cat ~/cryptape/godwoken-kicker/accounts/ckb-miner-and-faucet.key ) --n-derived-accounts 10
+        yarn run batch-deposit --private-key {{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} --n-derived-accounts 10 --capacity 500100000000 --lumos-config BETANET
 
     # - name: Setup tmate session for debugging if something failed
     #   if: ${{ failure() || cancelled() }}

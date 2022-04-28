@@ -137,6 +137,7 @@ async function tryDeposit(
     return txHash;
   } catch (err) {
     if (retries === 10) {
+      console.error(`[waitL1TxCommitted] throw error ${err}`);
       throw err;
     }
 

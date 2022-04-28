@@ -4,11 +4,6 @@ import { CkbUser } from "../user";
 import { FEE, MINIMAL_CKB_CELL_CAPACITY } from "../constant";
 import { toBigUInt128LE } from "@ckb-lumos/base/lib/utils";
 import * as config from "../config";
-import {
-  ScriptType,
-  SearchKey,
-} from "@godwoken-examples/tools/lib/account/indexer-remote";
-import { HexadecimalRange } from "@ckb-lumos/ckb-indexer/src/type";
 
 export function sumCkbCapacity(cells: Cell[]): bigint {
   return cells.reduce(
@@ -260,7 +255,7 @@ export function buildChangeOutputCell(
 export async function getRollupCell(retries: number = 0): Promise<Cell> {
   const getCellsResults = await ckbIndexer.getCells({
     script: config.ROLLUP_SCRIPT(),
-    script_type: ScriptType.type,
+    script_type: "type",
     filter: undefined, // TODO Config filter.block_range
   });
 

@@ -13,7 +13,6 @@
     "@ckb-lumos/rpc": "^0.18.0-rc7",
     "@ckb-lumos/toolkit": "^0.18.0-rc7",
     "@ckb-lumos/config-manager": "^0.18.0-rc7",
-    "@godwoken-examples/godwoken": "^0.0.1",
     "@metamask/eth-sig-util": "^4.0.0",
     "commander": "^6.2.1",
     "secp256k1": "^4.0.2",
