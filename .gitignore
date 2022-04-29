@@ -118,3 +118,7 @@ config.json
 lumos-config.json
 
 packages/polyjuice/lib
+
+# Vagrant files
+Vagrantfile
+.vagrant/
