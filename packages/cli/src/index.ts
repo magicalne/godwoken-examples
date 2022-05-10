@@ -296,7 +296,7 @@ program
     "--n-derived-accounts <NUMBER>",
     "the number of accounts to derived by the provided private key, default is 1000"
   )
-    .option("--seconds <SECONDS>", "running time in seconds, default is 600")
+  .option("--seconds <SECONDS>", "running time in seconds, default is 600")
   .option(
     "--batch-size <NUMBER>",
     "the batch size of deposit requests, default is 10"
@@ -315,7 +315,8 @@ program
       sudtAmount === BigInt(0)
         ? undefined
         : getSudtScript(program.sudtScriptArgs!);
-    const nDerivedAccounts = program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
+    const nDerivedAccounts =
+      program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
     const ckbUser = newCkbUser(program.privateKey);
     const allEthUsers = newDerivedEthUsers(
       program.privateKey,
@@ -365,11 +366,11 @@ program
     "withdrawal CKB capacity in shannons"
   )
   .requiredOption("--lumos-config <FILEPATH>", "scripts config file")
-    .option("--seconds <SECONDS>", "running time in seconds, default is 600")
-    .option(
+  .option("--seconds <SECONDS>", "running time in seconds, default is 600")
+  .option(
     "--n-derived-accounts <NUMBER>",
-  "the number of accounts to derived by the provided private key, default is 1000"
-)
+    "the number of accounts to derived by the provided private key, default is 1000"
+  )
   .requiredOption("--fee <CAPACITY>", "withdrawal fee in shannons")
   .option("-m --sudt-amount <AMOUNT>", "withdrawal SUDT amount, default is 0")
   .option(
@@ -386,7 +387,8 @@ program
         ? undefined
         : getSudtScript(program.sudtScriptArgs!);
     const fee: bigint = BigInt(program.fee);
-    const nDerivedAccounts = program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
+    const nDerivedAccounts =
+      program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
     const ckbUser = newCkbUser(program.privateKey); // I don't want to support specifying CKB address ~
     const allEthUsers = newDerivedEthUsers(
       program.privateKey,
@@ -423,7 +425,7 @@ program
   .command("unlock")
   .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
   .requiredOption("--lumos-config <FILEPATH>", "scripts config file")
-    .option("--seconds <SECONDS>", "running time in seconds, default is 600")
+  .option("--seconds <SECONDS>", "running time in seconds, default is 600")
   .action(async (program: Command) => {
     initializeConfig(program.lumosConfig);
 
@@ -469,11 +471,9 @@ program
 
     const browser = await puppeteer.launch({ headless: true });
     const admin = new CkbUser(program.privateKey);
-    const nDerivedAccounts = program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
-    const ckbUsers = newDerivedCkbUsers(
-      program.privateKey,
-      nDerivedAccounts,
-    );
+    const nDerivedAccounts =
+      program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
+    const ckbUsers = newDerivedCkbUsers(program.privateKey, nDerivedAccounts);
     console.log(
       "CkbAddresses:",
       JSON.stringify(
