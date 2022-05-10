@@ -1,7 +1,8 @@
 import * as lumosConfigManager from "@ckb-lumos/config-manager";
 import { Hash, CellDep, Script } from "@ckb-lumos/lumos";
-import { predefined } from "./predefined";
+import { BETANET } from "./predefined";
 import { HexString } from "@ckb-lumos/base";
+import { computeScriptHash } from "@ckb-lumos/base/lib/utils";
 
 export { ScriptConfig } from "@ckb-lumos/config-manager";
 
@@ -21,22 +22,18 @@ export function GODWOKEN_WEB3_URL(): string {
   @returns Rollup script hash
  */
 export function ROLLUP_TYPE_HASH(): Hash {
-  return process.env.ROLLUP_TYPE_HASH!;
-}
-
-export function ROLLUP_CODE_HASH(): Hash {
-  return process.env.ROLLUP_CODE_HASH!;
+  return computeScriptHash(ROLLUP_SCRIPT());
 }
 
 export function ROLLUP_SCRIPT_ARGS(): HexString {
   return process.env.ROLLUP_SCRIPT_ARGS!;
 }
 
-// TODO put it into lumos config
 export function ROLLUP_SCRIPT(): Script {
+  const scriptConfig = getScriptConfig("rollup_type_script");
   return {
-    code_hash: ROLLUP_CODE_HASH(),
-    hash_type: "type",
+    code_hash: scriptConfig.CODE_HASH,
+    hash_type: scriptConfig.HASH_TYPE,
     args: ROLLUP_SCRIPT_ARGS(),
   };
 }
@@ -58,6 +55,7 @@ export function getScriptConfig(
   return lumosConfigManager.getConfig().SCRIPTS[scriptName]!;
 }
 
+// TODO: Verify if all the scripts code exist
 export function initializeConfig(lumosConfigFile: string) {
   if (!process.env.ROLLUP_TYPE_HASH) {
     throw new Error('Miss environment variable "ROLLUP_TYPE_HASH"');
@@ -79,7 +77,7 @@ export function initializeConfig(lumosConfigFile: string) {
 
   if (lumosConfigFile.toUpperCase() === "BETANET") {
     console.log(`Load pre-defined configuration: "BETANET"`);
-    lumosConfigManager.initializeConfig(predefined.BETANET);
+    lumosConfigManager.initializeConfig(BETANET);
   } else {
     console.log(`Load self-defined configuration: "${lumosConfigFile}"`);
     const config: lumosConfigManager.Config = require(lumosConfigFile);
