@@ -2000,7 +2000,7 @@ class RawWithdrawalRequest {
   }
 
   getFee() {
-    return new Uint64(
+    return new Uint128(
       this.view.buffer.slice(
         0 +
           Uint32.size() +
@@ -2020,7 +2020,7 @@ class RawWithdrawalRequest {
           Byte32.size() +
           Uint32.size() +
           Byte32.size() +
-          Uint64.size()
+          Uint128.size()
       ),
       {
         validate: false,
@@ -2052,7 +2052,7 @@ class RawWithdrawalRequest {
       Byte32.size() +
       Uint32.size() +
       Byte32.size() +
-      Uint64.size()
+      Uint128.size()
     );
   }
 }
@@ -2070,7 +2070,7 @@ function SerializeRawWithdrawalRequest(value) {
       Byte32.size() +
       Uint32.size() +
       Byte32.size() +
-      Uint64.size()
+      Uint128.size()
   );
   const view = new DataView(array.buffer);
   array.set(new Uint8Array(SerializeUint32(value.nonce)), 0);
@@ -2118,7 +2118,7 @@ function SerializeRawWithdrawalRequest(value) {
       Uint32.size()
   );
   array.set(
-    new Uint8Array(SerializeUint64(value.fee)),
+    new Uint8Array(SerializeUint128(value.fee)),
     0 +
       Uint32.size() +
       Uint64.size() +
@@ -2990,10 +2990,10 @@ class Fee {
   }
 
   getAmount() {
-    return new Uint64(
+    return new Uint128(
       this.view.buffer.slice(
         0 + Uint32.size(),
-        0 + Uint32.size() + Uint64.size()
+        0 + Uint32.size() + Uint128.size()
       ),
       {
         validate: false,
@@ -3008,17 +3008,17 @@ class Fee {
   }
 
   static size() {
-    return 0 + Uint32.size() + Uint64.size();
+    return 0 + Uint32.size() + Uint128.size();
   }
 }
 
 exports.Fee = Fee;
 
 function SerializeFee(value) {
-  const array = new Uint8Array(0 + Uint32.size() + Uint64.size());
+  const array = new Uint8Array(0 + Uint32.size() + Uint128.size());
   const view = new DataView(array.buffer);
   array.set(new Uint8Array(SerializeUint32(value.registry_id)), 0);
-  array.set(new Uint8Array(SerializeUint64(value.amount)), 0 + Uint32.size());
+  array.set(new Uint8Array(SerializeUint128(value.amount)), 0 + Uint32.size());
   return array.buffer;
 }
 
@@ -3213,7 +3213,7 @@ class SUDTTransfer {
     new Bytes(this.view.buffer.slice(offsets[0], offsets[1]), {
       validate: false,
     }).validate();
-    new Uint128(this.view.buffer.slice(offsets[1], offsets[2]), {
+    new Uint256(this.view.buffer.slice(offsets[1], offsets[2]), {
       validate: false,
     }).validate();
     new Fee(this.view.buffer.slice(offsets[2], offsets[3]), {
@@ -3234,7 +3234,7 @@ class SUDTTransfer {
     const start = 8;
     const offset = this.view.getUint32(start, true);
     const offset_end = this.view.getUint32(start + 4, true);
-    return new Uint128(this.view.buffer.slice(offset, offset_end), {
+    return new Uint256(this.view.buffer.slice(offset, offset_end), {
       validate: false,
     });
   }
@@ -3254,7 +3254,7 @@ exports.SUDTTransfer = SUDTTransfer;
 function SerializeSUDTTransfer(value) {
   const buffers = [];
   buffers.push(SerializeBytes(value.to_address));
-  buffers.push(SerializeUint128(value.amount));
+  buffers.push(SerializeUint256(value.amount));
   buffers.push(SerializeFee(value.fee));
   return serializeTable(buffers);
 }

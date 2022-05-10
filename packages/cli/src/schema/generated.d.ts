@@ -223,7 +223,7 @@ export class RawWithdrawalRequest {
   getAccountScriptHash(): Byte32;
   getRegistryId(): Uint32;
   getOwnerLockHash(): Byte32;
-  getFee(): Uint64;
+  getFee(): Uint128;
 }
 
 export function SerializeWithdrawalRequestVec(
@@ -365,7 +365,7 @@ export class Fee {
   validate(compatible?: boolean): void;
   static size(): Number;
   getRegistryId(): Uint32;
-  getAmount(): Uint64;
+  getAmount(): Uint128;
 }
 
 export function SerializeCreateAccount(value: object): ArrayBuffer;
@@ -396,7 +396,7 @@ export class SUDTTransfer {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
   getToAddress(): Bytes;
-  getAmount(): Uint128;
+  getAmount(): Uint256;
   getFee(): Fee;
 }
 

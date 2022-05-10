@@ -39,7 +39,7 @@ export interface RawWithdrawalRequest {
   // uint32
   registry_id: HexNumber;
   owner_lock_hash: Hash;
-  // uint64
+  // uint128
   fee: HexNumber;
 }
 
@@ -96,7 +96,7 @@ export class WithdrawalRequestExtraCodec {
                 account_script_hash: normalizers.normalizeRawData(32),
                 registry_id: normalizers.normalizeHexNumber(4),
                 owner_lock_hash: normalizers.normalizeRawData(32),
-                fee: normalizers.normalizeHexNumber(8),
+                fee: normalizers.normalizeHexNumber(16),
               })
             ),
             signature: normalizers.normalizeRawData(65),
@@ -132,7 +132,7 @@ export class WithdrawalRequestCodec {
             account_script_hash: normalizers.normalizeRawData(32),
             registry_id: normalizers.normalizeHexNumber(4),
             owner_lock_hash: normalizers.normalizeRawData(32),
-            fee: normalizers.normalizeHexNumber(8),
+            fee: normalizers.normalizeHexNumber(16),
           })
         ),
         signature: normalizers.normalizeRawData(65),
@@ -163,26 +163,11 @@ export class RawWithdrawalRequestCodec {
         account_script_hash: normalizers.normalizeRawData(32),
         registry_id: normalizers.normalizeHexNumber(4),
         owner_lock_hash: normalizers.normalizeRawData(32),
-        fee: normalizers.normalizeHexNumber(8),
+        fee: normalizers.normalizeHexNumber(16),
       }
     );
     return Reader.from(
       molecule.SerializeRawWithdrawalRequest(normalized)
     ).serializeJson();
-  }
-}
-
-export class FeeCodec {
-  readonly fee__: Fee;
-  constructor(fee: Fee) {
-    this.fee__ = fee;
-  }
-
-  HexSerialize(): HexString {
-    const normalized = normalizers.normalizeObject("Fee", this.fee__, {
-      registry_id: normalizers.normalizeHexNumber(4),
-      amount: normalizers.normalizeHexNumber(8),
-    });
-    return Reader.from(molecule.SerializeFee(normalized)).serializeJson();
   }
 }
