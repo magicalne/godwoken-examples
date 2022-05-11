@@ -2,7 +2,7 @@ import { Cell, Hash, Script, utils } from "@ckb-lumos/lumos";
 import { ckbIndexer, ckbRpc, EthAddress, godwokenWeb3 } from "../alias";
 import { CkbUser } from "../user";
 import { FEE, MINIMAL_CKB_CELL_CAPACITY } from "../constant";
-import { toBigUInt128LE } from "@ckb-lumos/base/lib/utils";
+import { computeScriptHash, toBigUInt128LE } from "@ckb-lumos/base/lib/utils";
 import * as config from "../config";
 
 export function sumCkbCapacity(cells: Cell[]): bigint {
@@ -13,13 +13,19 @@ export function sumCkbCapacity(cells: Cell[]): bigint {
 }
 
 export function sumSudtAmount(cells: Cell[], sudtScript: Script): bigint {
-  return cells.reduce((acc, cell) => {
-    const amount =
-      cell.cell_output.type === sudtScript
-        ? acc + utils.readBigUInt128LE(cell.data)
-        : BigInt(0);
-    return acc + amount;
+  const amount = cells.reduce((acc, cell) => {
+    if (cell.cell_output.type == null) {
+      return acc;
+    } else {
+      const amount =
+        computeScriptHash(cell.cell_output.type) ===
+        computeScriptHash(sudtScript)
+          ? acc + utils.readBigUInt128LE(cell.data)
+          : BigInt(0);
+      return acc + amount;
+    }
   }, BigInt(0));
+  return amount;
 }
 
 export async function waitL1TxCommitted(
@@ -146,6 +152,7 @@ export async function collectInputCells(
       type: outputSudtScript,
     });
     for await (const cell of collector.collect()) {
+      console.log("bilibili ", cell);
       collectedInputCells.push(cell);
       collectedCkbCapacity += BigInt(cell.cell_output.capacity);
       collectedSudtAmount += utils.readBigUInt128LE(cell.data);
@@ -244,9 +251,12 @@ export function buildChangeOutputCell(
         capacity:
           "0x" + (inputCkbCapacity - outputCkbCapacity - FEE).toString(16),
         lock: l1CkbUser.l1LockScript(),
-        type: sudtScript,
+        // TODO FIXME
+        // type: sudtScript,
       },
-      data: toBigUInt128LE(inputSudtAmount - outputSudtAmount),
+      data: "0x",
+      // TODO FIXME
+      //data: toBigUInt128LE(inputSudtAmount - outputSudtAmount),
     };
     return cell;
   }
