@@ -6,6 +6,7 @@ import * as crypto from "crypto";
 import keccak256 from "keccak256";
 import { encodeToAddress } from "@ckb-lumos/helpers";
 import { utils } from "@ckb-lumos/base";
+import { normalizeHexNumber } from "./schema/normalizers";
 
 // https://github.com/nervosnetwork/godwoken/blob/d6c98d8f8a199b6ec29bc77c5065c1108220bb0a/crates/common/src/builtins.rs#L5
 export const ETH_REGISTRY_ID: number = 2;
@@ -37,6 +38,22 @@ export class EthUser {
 
   ethAddress(): EthAddress {
     return this.ethAddress__;
+  }
+
+  registryAddress(): HexString {
+    const normalizedRegistryId = normalizeHexNumber(4)(
+      "RegistryAddress::RegistryId",
+      ETH_REGISTRY_ID
+    ) as HexString;
+    const normalizedAddressLength = normalizeHexNumber(4)(
+      "RegistryAddress::AddrLength",
+      20
+    ) as HexString;
+    return (
+      normalizedRegistryId +
+      normalizedAddressLength.slice(2) +
+      this.ethAddress().slice(2)
+    );
   }
 
   ethRegistryName(): HexString {
