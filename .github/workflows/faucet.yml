@@ -1,0 +1,28 @@
+name: Testnet Faucet
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+  - cron: '50 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  faucet:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: yarn install
+      run: yarn && cd packages/cli && yarn
+    - name: yarn run faucet
+      env:
+        ROLLUP_SCRIPT_ARGS: "0x86c7429247beba7ddd6e4361bcdfc0510b0b644131e2afb7e486375249a01802"
+        GODWOKEN_WEB3_URL: "https://godwoken-betanet-v1.ckbapp.dev"
+        CKB_RPC_URL: "https://testnet.ckb.dev"
+        CKB_INDEXER_URL: "https://testnet.ckb.dev/indexer"
+      working-directory: packages/cli
+      run: |
+        yarn run faucet \
+          --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
+          --n-derived-accounts 10

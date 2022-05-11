@@ -1,0 +1,56 @@
+name: Deposit and Withdraw
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+  - cron: '50 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  deposit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      # - uses: actions/setup-node@v2
+      #   with:
+      #     node-version: '14'
+    - name: yarn install
+      run: yarn && cd packages/cli && yarn
+    - name: yarn run deposit
+      env:
+        ROLLUP_SCRIPT_ARGS: "0x86c7429247beba7ddd6e4361bcdfc0510b0b644131e2afb7e486375249a01802"
+        GODWOKEN_WEB3_URL: "https://godwoken-betanet-v1.ckbapp.dev"
+        CKB_RPC_URL: "https://testnet.ckb.dev"
+        CKB_INDEXER_URL: "https://testnet.ckb.dev/indexer"
+      working-directory: packages/cli
+      run: |
+        yarn run deposit \
+          --lumos-config BETANET \
+          --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
+          --capacity 500100000000 
+
+  withdraw:
+    needs: [ deposit ]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      # - uses: actions/setup-node@v2
+      #   with:
+      #     node-version: '14'
+    - name: yarn install
+      run: yarn && cd packages/cli && yarn
+    - name: yarn run withdraw
+      env:
+        ROLLUP_SCRIPT_ARGS: "0x86c7429247beba7ddd6e4361bcdfc0510b0b644131e2afb7e486375249a01802"
+        GODWOKEN_WEB3_URL: "https://godwoken-betanet-v1.ckbapp.dev"
+        CKB_RPC_URL: "https://testnet.ckb.dev"
+        CKB_INDEXER_URL: "https://testnet.ckb.dev/indexer"
+      working-directory: packages/cli
+      run: |
+        yarn run withdraw \
+          --lumos-config BETANET \
+          --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
+          --capacity 500000000000 \
+          --fee 100
