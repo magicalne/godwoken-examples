@@ -47,17 +47,26 @@ export async function collectFinalizedWithdrawals(
     lock: {
       code_hash: withdrawalLock.CODE_HASH,
       hash_type: withdrawalLock.HASH_TYPE,
-      args: config.ROLLUP_TYPE_HASH() + ckbUser.l1LockHash().slice(2),
+      args: config.ROLLUP_TYPE_HASH(), // TODO FIXME + ckbUser.l1LockHash().slice(2),
     },
     type: sudtScript ? sudtScript : "empty",
     argsLen: "any",
   });
   for await (const cell of withdrawalCollector.collect()) {
-    if (isFinalizedWithdrawal(lastFinalizedBlockNumber, cell)) {
+    const withdrawalBlockNumber = getWithdrawalBlockNumber(cell);
+    if (withdrawalBlockNumber < lastFinalizedBlockNumber) {
+      console.info(
+        `unfinalized.withdrawalBlockNumber(${withdrawalBlockNumber}) < lastFinalizedBlockNumber(${lastFinalizedBlockNumber})`
+      );
       finalizedWithdrawals.push(cell);
       if (finalizedWithdrawals.length >= MAX_WITHDRAWALS) {
         break;
       }
+    } else {
+      console.info(
+        `unfinalized.withdrawalBlockNumber(${withdrawalBlockNumber}) >= lastFinalizedBlockNumber(${lastFinalizedBlockNumber})`
+      );
+      nUnfinalizedWithdrawals++;
     }
   }
   console.info(
@@ -65,25 +74,24 @@ export async function collectFinalizedWithdrawals(
     lastFinalizedBlockNumber
   );
   console.info(
-    `[collectFinalizedWithdrawals] Indexer returns ${finalizedWithdrawals.length} finalized withdrawals (MAX_WITHDRAWALS = ${MAX_WITHDRAWALS}), ${nUnfinalizedWithdrawals} unfinalized withdrawals`
+    `[collectFinalizedWithdrawals] Indexer returns ${finalizedWithdrawals.length} finalized withdrawals, ${nUnfinalizedWithdrawals} unfinalized withdrawals`
   );
   return finalizedWithdrawals;
 }
 
-export function isFinalizedWithdrawal(
-  lastFinalizedBlockNumber: bigint,
-  withdrawal: Cell
-): boolean {
+export function getWithdrawalBlockNumber(withdrawal: Cell): bigint {
   const lock_args = withdrawal.cell_output.lock.args;
-  const withdrawal_lock_args_data = "0x" + lock_args.slice(66);
+  // skip 66: "0x" + ROLLUP_TYPE_HASH
+  // length 104 = WithdrawalLockArgs.TOTAL_SIZE * 2
+  const withdrawal_lock_args_data =
+    "0x" + lock_args.slice(2 + 32 * 2, 2 + 32 * 2 + 104 * 2);
   const withdrawal_lock_args = new WithdrawalLockArgs(
     new Reader(withdrawal_lock_args_data)
   );
-
-  const withdrawal_block_number = BigInt(
-    withdrawal_lock_args.getWithdrawalBlockNumber()
-  );
-  return withdrawal_block_number > lastFinalizedBlockNumber;
+  const withdrawal_block_number = new Uint64(
+    withdrawal_lock_args.getWithdrawalBlockNumber().raw()
+  ).toLittleEndianBigUint64();
+  return withdrawal_block_number;
 }
 
 export async function buildUnlockL1Transaction(
