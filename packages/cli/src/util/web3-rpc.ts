@@ -2,9 +2,11 @@ import http from "http";
 import https from "https";
 import { RPC as Rpc } from "@ckb-lumos/toolkit";
 import { EthAddress } from "../alias";
-import { HexNumber } from "@ckb-lumos/base";
 import { WithdrawalRequestExtra, WithdrawalRequestExtraCodec } from "../schema";
-import { Hash } from "@ckb-lumos/lumos";
+import { Hash, Script, HexNumber, HexString } from "@ckb-lumos/lumos";
+import { normalizeHexNumber } from "../schema/normalizers";
+import { EthUser, ETH_REGISTRY_ID } from "../user";
+import { computeScriptHash } from "@ckb-lumos/base/lib/utils";
 
 const httpAgent = new http.Agent({
   keepAlive: true,
@@ -41,6 +43,30 @@ export class GodwokenWeb3Rpc {
     return BigInt(hexBalance);
   }
 
+  public async getAccountIdByScriptHash(scriptHash: Hash): Promise<number> {
+    const hexAccountId = (await this.call_(
+      "gw_get_account_id_by_script_hash",
+      scriptHash
+    )) as HexNumber;
+    return Number(hexAccountId);
+  }
+
+  public async getSudtBalance(
+    ethAddress: EthAddress,
+    sudtScript: Script
+  ): Promise<bigint> {
+    console.log("bilibili", sudtScript);
+    const sudtScriptHash = computeScriptHash(sudtScript);
+    const sudtId = await this.getAccountIdByScriptHash(sudtScriptHash);
+    const registryAddress = new EthUser(ethAddress).registryAddress();
+    const hexBalance = (await this.call_(
+      "gw_get_balance",
+      registryAddress,
+      "0x" + sudtId.toString(16)
+    )) as HexNumber;
+    return BigInt(hexBalance);
+  }
+
   public async getNonce(ethAddress: EthAddress): Promise<number> {
     const hexNonce = (await this.call_(
       "eth_getTransactionCount",
@@ -73,6 +99,14 @@ export class GodwokenWeb3Rpc {
       "gw_submit_withdrawal_request",
       serialized
     )) as Hash;
+  }
+
+  public async getEthAccountLockHash(): Promise<Hash> {
+    return (await this.call_("poly_getEthAccountLockHash")) as Hash;
+  }
+
+  public async getRollupTypeHash(): Promise<Hash> {
+    return (await this.call_("poly_getRollupTypeHash")) as Hash;
   }
 
   private async call_(method: string, ...args: any[]): Promise<any> {
