@@ -2,7 +2,7 @@ import { Command } from "commander";
 import * as lumosConfigManager from "@ckb-lumos/config-manager";
 import puppeteer from "puppeteer";
 import * as config from "./config";
-import { Cell, CellDep, Hash, Output, Script } from "@ckb-lumos/lumos";
+import { Cell, CellDep, Hash, Script } from "@ckb-lumos/lumos";
 import { CkbUser, EthUser } from "./user";
 import {
   buildDepositCellDeps,
@@ -27,10 +27,7 @@ import { buildWithdrawalRequest } from "./functional/withdraw";
 import { HexString } from "@ckb-lumos/base";
 import keccak256 from "keccak256";
 import { faucet } from "./functional/faucet";
-import {
-  buildUnlockL1Transaction,
-  collectFinalizedWithdrawals,
-} from "./functional/unlock";
+import { collectFinalizedWithdrawals } from "./functional/unlock";
 
 function getCapacity(ckbCapacity: string): bigint {
   const capacity = BigInt(ckbCapacity);
@@ -435,32 +432,16 @@ program
   });
 
 program
-  .command("unlock")
-  .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
+  .command("watch-withdrawal")
   .requiredOption("--lumos-config <FILEPATH>", "scripts config file")
-  .option("--seconds <SECONDS>", "running time in seconds, default is 600")
   .action(async (program: Command) => {
     await initializeConfig(program.lumosConfig);
-
-    const seconds = program.seconds != null ? Number(program.seconds) : 600;
-    asyncSleep(seconds * 1000).then(() => process.exit(0));
-
-    const ckbUser = newCkbUser(program.privateKey);
     while (true) {
       try {
-        const withdrawals = await collectFinalizedWithdrawals(ckbUser);
-        if (withdrawals.length > 0) {
-          const tx = await buildUnlockL1Transaction(ckbUser, withdrawals);
-          const hash = await ckbRpc.send_transaction(tx, "passthrough");
-          console.info(
-            `Try unlock ${withdrawals.length} withdrawals in transaction ${hash}`
-          );
-          await waitL1TxCommitted(hash);
-        }
+        const _withdrawals = await collectFinalizedWithdrawals();
       } catch (err) {
         console.error("Catch error: ", err);
       }
-
       await asyncSleep(10 * 1000);
     }
   });

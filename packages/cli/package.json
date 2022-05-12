@@ -34,7 +34,7 @@
     "batch-deposit": "ts-node-script -s src/index.ts batch-deposit",
     "batch-withdraw": "ts-node-script -s src/index.ts batch-withdraw",
     "withdraw": "ts-node-script -s src/index.ts withdraw",
-    "unlock": "ts-node-script -s src/index.ts unlock",
+    "watch-withdrawal": "ts-node-script -s src/index.ts watch-withdrawal",
     "faucet": "ts-node-script -s src/index.ts faucet"
   }
 }
