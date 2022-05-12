@@ -56,7 +56,9 @@ export async function collectFinalizedWithdrawals(
     const withdrawalBlockNumber = getWithdrawalBlockNumber(cell);
     if (withdrawalBlockNumber < lastFinalizedBlockNumber) {
       console.info(
-        `unfinalized.withdrawalBlockNumber(${withdrawalBlockNumber}) < lastFinalizedBlockNumber(${lastFinalizedBlockNumber})`
+        `[collectFinalizedWithdrawals] unfinalized, outPoint: ${JSON.stringify(
+          cell.out_point
+        )}, withdrawalBlockNumber(${withdrawalBlockNumber}) < lastFinalizedBlockNumber(${lastFinalizedBlockNumber})`
       );
       finalizedWithdrawals.push(cell);
       if (finalizedWithdrawals.length >= MAX_WITHDRAWALS) {
@@ -64,17 +66,15 @@ export async function collectFinalizedWithdrawals(
       }
     } else {
       console.info(
-        `unfinalized.withdrawalBlockNumber(${withdrawalBlockNumber}) >= lastFinalizedBlockNumber(${lastFinalizedBlockNumber})`
+        `[collectFinalizedWithdrawals] unfinalized, outPoint: ${JSON.stringify(
+          cell.out_point
+        )}, withdrawalBlockNumber(${withdrawalBlockNumber}) >= lastFinalizedBlockNumber(${lastFinalizedBlockNumber})`
       );
       nUnfinalizedWithdrawals++;
     }
   }
   console.info(
-    "[collectFinalizedWithdrawals] rollupCell.lastFinalizedBlockNumber => ",
-    lastFinalizedBlockNumber
-  );
-  console.info(
-    `[collectFinalizedWithdrawals] Indexer returns ${finalizedWithdrawals.length} finalized withdrawals, ${nUnfinalizedWithdrawals} unfinalized withdrawals`
+    `[collectFinalizedWithdrawals] rollupCell.lastFinalizedBlockNumber => ${lastFinalizedBlockNumber}, indexer returns ${finalizedWithdrawals.length} finalized withdrawals, ${nUnfinalizedWithdrawals} unfinalized withdrawals`
   );
   return finalizedWithdrawals;
 }
