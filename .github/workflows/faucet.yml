@@ -20,6 +20,8 @@ jobs:
         CKB_INDEXER_URL: "https://testnet.ckb.dev/indexer"
       working-directory: packages/cli
       run: |
-        yarn run faucet \
-          --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
-          --n-derived-accounts 1000
+        for _ in $(seq 1 100); do
+          yarn run faucet \
+            --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
+            --n-derived-accounts 10;
+        done

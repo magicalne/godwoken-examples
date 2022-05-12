@@ -192,21 +192,30 @@ const program = new Command().version(require("./../package.json").version);
 
 program
   .command("get-balance")
-  .requiredOption("-l, --eth-address <ADDRESS>", "ETH address")
+  .option("-l, --eth-address <ADDRESS>", "ETH address")
+  .option("-p, --private-key <PRIVATEKEY>", "private key")
   .option("-s --sudt-script-args <SUDTSCRIPTARGS>", "SUDT script args")
   .action(async (program: Command) => {
+    let ethAddress = program.ethAddress;
+    if (ethAddress == null) {
+      if (program.privateKey == null) {
+        throw new Error(
+          "require one of --eth-address and --private-key parameter"
+        );
+      } else {
+        ethAddress = EthUser.privateKeyToEthAddress(program.privateKey);
+      }
+    }
+
     const sudtScriptArgs = program.sudtScriptArgs;
     if (sudtScriptArgs == null) {
-      const balance = await godwokenWeb3.getBalance(program.ethAddress);
-      console.log(`"${program.ethAddress}" has balance ${balance}`);
+      const balance = await godwokenWeb3.getBalance(ethAddress);
+      console.log(`"${ethAddress}" has balance ${balance}`);
     } else {
       const sudtScript = getSudtScript(sudtScriptArgs!);
-      const amount = await godwokenWeb3.getSudtBalance(
-        program.ethAddress,
-        sudtScript
-      );
+      const amount = await godwokenWeb3.getSudtBalance(ethAddress, sudtScript);
       console.log(
-        `"${program.ethAddress}" has balance ${amount} of SUDT ${sudtScriptArgs}`
+        `"${ethAddress}" has balance ${amount} of SUDT ${sudtScriptArgs}`
       );
     }
   });
