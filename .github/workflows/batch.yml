@@ -27,7 +27,7 @@ jobs:
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
           --capacity 500100000000 \
-          --n-derived-accounts 10
+          --n-derived-accounts 1000
 
   batch-withdraw:
     needs: [ batch-deposit ]
@@ -49,4 +49,4 @@ jobs:
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
           --capacity 500000000000 \
           --fee 100 \
-          --n-derived-accounts
+          --n-derived-accounts 1000
