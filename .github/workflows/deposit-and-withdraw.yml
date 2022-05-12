@@ -1,9 +1,6 @@
 name: Deposit and Withdraw
 
 on:
-  push:
-    branches:
-      - main
   schedule:
   - cron: '50 12 * * *'
   workflow_dispatch:

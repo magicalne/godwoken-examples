@@ -1,9 +1,6 @@
-name: Testnet Faucet
+name: Aggron Network Faucet
 
 on:
-  push:
-    branches:
-      - main
   schedule:
   - cron: '50 12 * * *'
   workflow_dispatch:
@@ -25,4 +22,4 @@ jobs:
       run: |
         yarn run faucet \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
-          --n-derived-accounts 10
+          --n-derived-accounts 1000
