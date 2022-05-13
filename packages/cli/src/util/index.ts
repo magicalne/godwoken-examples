@@ -1,8 +1,8 @@
 import { Cell, Hash, Script, utils } from "@ckb-lumos/lumos";
 import { ckbIndexer, ckbRpc, EthAddress, godwokenWeb3 } from "../alias";
 import { CkbUser } from "../user";
-import { FEE, MINIMAL_CKB_CELL_CAPACITY } from "../constant";
-import { computeScriptHash, toBigUInt128LE } from "@ckb-lumos/base/lib/utils";
+import { L1_FEE, MINIMAL_CKB_CELL_CAPACITY } from "../constant";
+import { computeScriptHash } from "@ckb-lumos/base/lib/utils";
 import * as config from "../config";
 
 export function sumCkbCapacity(cells: Cell[]): bigint {
@@ -113,7 +113,7 @@ export async function waitL2Withdrawal(
     if (withdrawalStatus.status !== lastStatus.status) {
       lastStatus = withdrawalStatus;
       console.log(
-        `[waitL2Withdrawal] web3.gw_get_withdrawal("${withdrawalHash}") ==> ${lastStatus}`
+        `[waitL2Withdrawal] web3.gw_get_withdrawal("${withdrawalHash}") ==> ${lastStatus.status}`
       );
       if (withdrawalStatus.status === "committed") {
         break;
@@ -139,7 +139,8 @@ export async function collectInputCells(
   l1CkbUser: CkbUser,
   outputCkbCapacity: bigint,
   outputSudtAmount: bigint,
-  outputSudtScript?: Script
+  outputSudtScript?: Script,
+  ckbIndexerSkipParam?: number
 ): Promise<Cell[]> {
   let collectedCkbCapacity = BigInt(0);
   let collectedSudtAmount = BigInt(0);
@@ -152,7 +153,6 @@ export async function collectInputCells(
       type: outputSudtScript,
     });
     for await (const cell of collector.collect()) {
-      console.log("bilibili ", cell);
       collectedInputCells.push(cell);
       collectedCkbCapacity += BigInt(cell.cell_output.capacity);
       collectedSudtAmount += utils.readBigUInt128LE(cell.data);
@@ -160,7 +160,7 @@ export async function collectInputCells(
       if (
         collectedSudtAmount >= outputSudtAmount &&
         collectedCkbCapacity >=
-          outputCkbCapacity + FEE + MINIMAL_CKB_CELL_CAPACITY
+          outputCkbCapacity + L1_FEE + MINIMAL_CKB_CELL_CAPACITY
       ) {
         break;
       }
@@ -168,7 +168,8 @@ export async function collectInputCells(
   }
   if (
     collectedSudtAmount >= outputSudtAmount &&
-    collectedCkbCapacity >= outputCkbCapacity + FEE + MINIMAL_CKB_CELL_CAPACITY
+    collectedCkbCapacity >=
+      outputCkbCapacity + L1_FEE + MINIMAL_CKB_CELL_CAPACITY
   ) {
     return collectedInputCells;
   } else if (collectedSudtAmount < outputSudtAmount) {
@@ -182,6 +183,7 @@ export async function collectInputCells(
     lock: l1CkbUser.l1LockScript(),
     type: "empty",
     data: "0x",
+    skip: ckbIndexerSkipParam,
   });
   for await (const cell of collector.collect()) {
     collectedInputCells.push(cell);
@@ -189,14 +191,14 @@ export async function collectInputCells(
 
     if (
       collectedCkbCapacity >=
-      outputCkbCapacity + FEE + MINIMAL_CKB_CELL_CAPACITY
+      outputCkbCapacity + L1_FEE + MINIMAL_CKB_CELL_CAPACITY
     ) {
       break;
     }
   }
   if (
     collectedCkbCapacity >=
-    outputCkbCapacity + FEE + MINIMAL_CKB_CELL_CAPACITY
+    outputCkbCapacity + L1_FEE + MINIMAL_CKB_CELL_CAPACITY
   ) {
     return collectedInputCells;
   } else {
@@ -223,9 +225,12 @@ export function buildChangeOutputCell(
     inputSudtAmount = sumSudtAmount(inputCells, sudtScript!);
   }
 
-  if (inputCkbCapacity < outputCkbCapacity + FEE + MINIMAL_CKB_CELL_CAPACITY) {
+  if (
+    inputCkbCapacity <
+    outputCkbCapacity + L1_FEE + MINIMAL_CKB_CELL_CAPACITY
+  ) {
     throw new Error(
-      `Not enough CKB, outputs CKB capacity: ${outputCkbCapacity}, inputs CKB capacity: ${inputCkbCapacity}, fee: ${FEE}, minimal_ckb_cell_capacity: ${MINIMAL_CKB_CELL_CAPACITY}`
+      `Not enough CKB, outputs CKB capacity: ${outputCkbCapacity}, inputs CKB capacity: ${inputCkbCapacity}, fee: ${L1_FEE}, minimal_ckb_cell_capacity: ${MINIMAL_CKB_CELL_CAPACITY}`
     );
   }
   if (inputSudtAmount < outputSudtAmount) {
@@ -238,7 +243,7 @@ export function buildChangeOutputCell(
     const cell: Cell = {
       cell_output: {
         capacity:
-          "0x" + (inputCkbCapacity - outputCkbCapacity - FEE).toString(16),
+          "0x" + (inputCkbCapacity - outputCkbCapacity - L1_FEE).toString(16),
         lock: l1CkbUser.l1LockScript(),
         type: undefined,
       },
@@ -249,7 +254,7 @@ export function buildChangeOutputCell(
     const cell: Cell = {
       cell_output: {
         capacity:
-          "0x" + (inputCkbCapacity - outputCkbCapacity - FEE).toString(16),
+          "0x" + (inputCkbCapacity - outputCkbCapacity - L1_FEE).toString(16),
         lock: l1CkbUser.l1LockScript(),
         // TODO FIXME
         // type: sudtScript,
