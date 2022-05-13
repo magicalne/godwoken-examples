@@ -1,26 +1,8 @@
-import {
-  Transaction,
-  Output,
-  utils,
-  Script,
-  helpers,
-  Cell,
-  CellDep,
-  WitnessArgs,
-} from "@ckb-lumos/lumos";
-import { ckbIndexer } from "../alias";
+import { Output, utils, Script, Cell, CellDep } from "@ckb-lumos/lumos";
 import { EthUser, CkbUser } from "../user";
 import { DepositLockArgs, DepositLockArgsCodec } from "../schema";
 import * as config from "../config";
 import { toBigUInt128LE } from "@ckb-lumos/base/lib/utils";
-import { FEE, MINIMAL_CKB_CELL_CAPACITY } from "../constant";
-import { sumCkbCapacity, sumSudtAmount } from "../util";
-import { common } from "@ckb-lumos/common-scripts";
-import { key } from "@ckb-lumos/hd";
-import { sealTransaction } from "@ckb-lumos/helpers";
-import { SerializeWitnessArgs } from "../schema/generated";
-import { normalizers, Reader } from "@ckb-lumos/toolkit";
-import NormalizeWitnessArgs = normalizers.NormalizeWitnessArgs;
 
 export function buildDepositLockArgs(
   l1CkbUser: CkbUser,

@@ -2,7 +2,7 @@ import { Command } from "commander";
 import * as lumosConfigManager from "@ckb-lumos/config-manager";
 import puppeteer from "puppeteer";
 import * as config from "./config";
-import { Cell, CellDep, Hash, Script } from "@ckb-lumos/lumos";
+import { Cell, CellDep, Hash, Script, Transaction } from "@ckb-lumos/lumos";
 import { CkbUser, EthUser } from "./user";
 import {
   buildDepositCellDeps,
@@ -20,7 +20,11 @@ import {
   sumSudtAmount,
   asyncSleep,
 } from "./util";
-import { FEE, MINIMUM_DEPOSIT_CAPACITY } from "./constant";
+import {
+  L1_FEE,
+  MINIMAL_DEPOSIT_CAPACITY,
+  MINIMAL_WITHDRAWAL_CAPACITY,
+} from "./constant";
 import { initializeConfig } from "./config";
 import { WithdrawalRequestExtra } from "./schema";
 import { buildWithdrawalRequest } from "./functional/withdraw";
@@ -28,15 +32,10 @@ import { HexString } from "@ckb-lumos/base";
 import keccak256 from "keccak256";
 import { faucet } from "./functional/faucet";
 import { collectFinalizedWithdrawals } from "./functional/unlock";
+import { TransactionSkeletonType } from "@ckb-lumos/helpers";
 
 function getCapacity(ckbCapacity: string): bigint {
-  const capacity = BigInt(ckbCapacity);
-  if (capacity < MINIMUM_DEPOSIT_CAPACITY) {
-    throw new Error(
-      `Invalid --capacity, expected greater than or equal to ${MINIMUM_DEPOSIT_CAPACITY}`
-    );
-  }
-  return capacity;
+  return BigInt(ckbCapacity);
 }
 
 function getSudtAmount(sudtAmount?: string): bigint {
@@ -99,13 +98,13 @@ function newDerivedEthUsers(
     );
 }
 
-async function tryDeposit(
+async function buildDepositL1Transaction(
   ckbUser: CkbUser,
   outputs: Cell[],
   cellDeps: CellDep[],
   sudtScript?: Script,
-  retries: number = 0
-): Promise<Hash> {
+  ckbIndexerSkipParam?: number
+): Promise<Transaction> {
   const sumOutputsCapacity = sumCkbCapacity(outputs);
   const sumOutputsSudtAmount =
     sudtScript == null ? BigInt(0) : sumSudtAmount(outputs, sudtScript!);
@@ -113,7 +112,8 @@ async function tryDeposit(
     ckbUser,
     sumOutputsCapacity,
     sumOutputsSudtAmount,
-    sudtScript
+    sudtScript,
+    ckbIndexerSkipParam
   );
   const changeOutput = buildChangeOutputCell(
     ckbUser,
@@ -121,25 +121,33 @@ async function tryDeposit(
     outputs,
     sudtScript
   );
-  const tx = buildL1SecpTransaction(
+  return buildL1SecpTransaction(
     ckbUser,
     inputs,
     [...outputs, changeOutput],
     cellDeps
   );
+}
 
+async function sendL1TransactionAndWaitConfirmation(
+  tx: Transaction,
+  retries: number = 0
+): Promise<Hash> {
   try {
     const txHash = await ckbRpc.send_transaction(tx, "passthrough");
     await waitL1TxCommitted(txHash);
     return txHash;
   } catch (err) {
-    if (retries === 10) {
+    console.info(
+      `[DEBUG] [sendL1TransactionAndWaitConfirmation] error: ${err}`
+    );
+    if (retries === 300) {
       console.error(`[waitL1TxCommitted] throw error ${err}`);
       throw err;
     }
 
-    await asyncSleep(5000);
-    return tryDeposit(ckbUser, outputs, cellDeps, sudtScript, retries + 1);
+    await asyncSleep(1000);
+    return await sendL1TransactionAndWaitConfirmation(tx, retries + 1);
   }
 }
 
@@ -238,6 +246,7 @@ program
     "depositing SUDT script args"
   )
   .action(async (program: Command) => {
+    // deposit
     await initializeConfig(program.lumosConfig);
     const ckbCapacity = getCapacity(program.capacity);
     const sudtAmount = getSudtAmount(program.sudtAmount);
@@ -251,6 +260,12 @@ program
     console.log(`CkbLockArgs: "${ckbUser.ckbSecpLockArgs()}"`);
     console.log(`EthAddress: "${ethUser.ethAddress()}"`);
 
+    if (ckbCapacity < MINIMAL_DEPOSIT_CAPACITY) {
+      throw new Error(
+        `Invalid --capacity, expected greater than or equal to ${MINIMAL_DEPOSIT_CAPACITY}`
+      );
+    }
+
     const output = buildDepositOutputCell(
       ckbUser,
       ethUser,
@@ -259,19 +274,23 @@ program
       sudtScript
     );
     const cellDeps = buildDepositCellDeps(sudtAmount > BigInt(0));
-    const _txHash = await tryDeposit(ckbUser, [output], cellDeps, sudtScript);
+    const tx = await buildDepositL1Transaction(
+      ckbUser,
+      [output],
+      cellDeps,
+      sudtScript,
+      0
+    );
+    const _txHash = await sendL1TransactionAndWaitConfirmation(tx);
     await waitL2Deposit(ethUser.ethAddress());
   });
 
 program
   .command("withdraw")
   .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
-  .requiredOption(
-    "-c --capacity <CAPACITY>",
-    "withdrawal CKB capacity in shannons"
-  )
   .requiredOption("--lumos-config <FILEPATH>", "scripts config file")
   .requiredOption("--fee <CAPACITY>", "withdrawal fee in shannons")
+  .option("-c --capacity <CAPACITY>", "withdrawal CKB capacity in shannons")
   .option("-m --sudt-amount <AMOUNT>", "withdrawal SUDT amount, default is 0")
   .option(
     "-s --sudt-script-args <SUDTSCRIPTARGS>",
@@ -279,7 +298,6 @@ program
   )
   .action(async (program: Command) => {
     await initializeConfig(program.lumosConfig);
-    const ckbCapacity = getCapacity(program.capacity);
     const sudtAmount = getSudtAmount(program.sudtAmount);
     const sudtScript =
       sudtAmount === BigInt(0)
@@ -292,6 +310,20 @@ program
     console.log(`CkbLockArgs: "${ckbUser.ckbSecpLockArgs()}"`);
     console.log(`EthAddress: "${ethUser.ethAddress()}"`);
 
+    const initBalance = await godwokenWeb3.getBalance(ethUser.ethAddress());
+    const ckbCapacity = program.capacity
+      ? getCapacity(program.capacity!)
+      : initBalance / BigInt(10) ** BigInt(10);
+    console.log(
+      `TryWithdraw ${ethUser.ethAddress()} ${ckbCapacity} capacity(aka value ${
+        ckbCapacity * BigInt(10) ** BigInt(10)
+      }), initBalance: ${await godwokenWeb3.getBalance(ethUser.ethAddress())}`
+    );
+    if (ckbCapacity < MINIMAL_WITHDRAWAL_CAPACITY) {
+      throw new Error(
+        `Withdraw capacity ${ckbCapacity}shannon is less than MINIMAL_WITHDRAWAL_CAPACITY(${MINIMAL_WITHDRAWAL_CAPACITY}shannon)`
+      );
+    }
     const withdrawalHash = await tryWithdraw(
       ckbUser,
       ethUser,
@@ -351,6 +383,8 @@ program
       )}`
     );
 
+    const batchSize: number = program.batchSize ? +program.batchSize : 10;
+    const cellDeps = buildDepositCellDeps(sudtScript != null);
     const allOutputs = allEthUsers.map((ethUser) =>
       buildDepositOutputCell(
         ckbUser,
@@ -360,38 +394,63 @@ program
         sudtScript
       )
     );
-    const batchSize: number = +program.batchSize || 10;
-    const cellDeps = buildDepositCellDeps(sudtScript != null);
+
+    console.info("### Collect inputs and construct transactions");
+    let skip = 0;
+    let txs: Transaction[] = [];
     for (let start = 0; start < allOutputs.length; start += batchSize) {
-      // const ethUsers = allEthUsers.slice(start, start + batchSize);
       const outputs = allOutputs.slice(start, start + batchSize);
-      // const initBalances = await Promise.all(
-      //   ethUsers.map(
-      //     async (ethUser) => await godwokenWeb3.getBalance(ethUser.ethAddress())
-      //   )
-      // );
-      const _txHash = await tryDeposit(ckbUser, outputs, cellDeps, sudtScript);
-      // for (let i = 0; i < ethUsers.length; i++) {
-      //   await waitL2Deposit(ethUsers[i].ethAddress(), initBalances[i]);
-      // }
+      const tx = await buildDepositL1Transaction(
+        ckbUser,
+        outputs,
+        cellDeps,
+        sudtScript,
+        skip
+      );
+      txs.push(tx);
+      skip += tx.inputs.length;
     }
-    for (let i = 0; i < allOutputs.length; i += 1) {
-      const initBalance = await godwokenWeb3.getBalance(
+
+    console.info("### Collect accounts' init balances");
+    let initBalances: bigint[] = [];
+    for (let i = 0; i < allOutputs.length; i++) {
+      const balance = await godwokenWeb3.getBalance(
         allEthUsers[i].ethAddress()
       );
-      await waitL2Deposit(allEthUsers[i].ethAddress(), initBalance);
-      console.info(`Successfully batch-deposit accumulated ${i + 1} accounts`);
+      initBalances.push(balance);
+    }
+
+    console.info("### Send layer1 transactions");
+    for (let i = 0; i < txs.length; i++) {
+      const tx = txs[i];
+      const txHash = await sendL1TransactionAndWaitConfirmation(tx);
+      console.info(
+        `Sent ${i + 1}/${txs.length} layer-1 transaction, hash: ${txHash}`
+      );
+    }
+
+    console.info("### Wait layer2 deposit successfully");
+    for (let i = 0; i < allOutputs.length; i += 1) {
+      await waitL2Deposit(allEthUsers[i].ethAddress(), initBalances[i]);
+      const balance = await godwokenWeb3.getBalance(
+        allEthUsers[i].ethAddress()
+      );
+      console.info(
+        `Successfully batch-deposit accumulated ${
+          i + 1
+        } accounts, ${allEthUsers[i].ethAddress()} have balance ${balance}`
+      );
     }
   });
 
 program
   .command("batch-withdraw")
   .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
-  .requiredOption(
-    "-c --capacity <CAPACITY>",
-    "withdrawal CKB capacity in shannons"
-  )
   .requiredOption("--lumos-config <FILEPATH>", "scripts config file")
+  .option(
+    "-c --capacity <CAPACITY>",
+    "withdrawal CKB capacity in shannons, default is all balance"
+  )
   .option("--seconds <SECONDS>", "running time in seconds, default is 600")
   .option(
     "--n-derived-accounts <NUMBER>",
@@ -406,7 +465,6 @@ program
   .action(async (program: Command) => {
     // batch-withdraw
     await initializeConfig(program.lumosConfig);
-    const ckbCapacity = getCapacity(program.capacity);
     const sudtAmount = getSudtAmount(program.sudtAmount);
     const sudtScript =
       sudtAmount === BigInt(0)
@@ -432,6 +490,16 @@ program
 
     let hashes: Hash[] = [];
     for (const ethUser of allEthUsers) {
+      const initBalance = await godwokenWeb3.getBalance(ethUser.ethAddress());
+      const ckbCapacity = program.capacity
+        ? getCapacity(program.capacity!)
+        : initBalance / BigInt(10) ** BigInt(10);
+      if (ckbCapacity < MINIMAL_WITHDRAWAL_CAPACITY) {
+        console.error(
+          `skip, withdraw capacity ${ckbCapacity}shannon is less than MINIMAL_WITHDRAWAL_CAPACITY(${MINIMAL_WITHDRAWAL_CAPACITY}shannon)`
+        );
+        continue;
+      }
       const hash = await tryWithdraw(
         ckbUser,
         ethUser,
@@ -439,6 +507,13 @@ program
         ckbCapacity,
         sudtAmount,
         sudtScript
+      );
+      console.log(
+        `TryWithdraw ${ethUser.ethAddress()} ${ckbCapacity} capacity(aka value ${
+          ckbCapacity * BigInt(10) ** BigInt(10)
+        }), initBalance: ${await godwokenWeb3.getBalance(
+          ethUser.ethAddress()
+        )}, withdrawal hash: ${hash}`
       );
       hashes.push(hash);
     }
@@ -521,7 +596,7 @@ program
           data: "0x",
           cell_output: {
             capacity:
-              "0x" + (BigInt(input.cell_output.capacity) - FEE).toString(16),
+              "0x" + (BigInt(input.cell_output.capacity) - L1_FEE).toString(16),
             lock: admin.l1LockScript(),
             type: undefined,
           },
