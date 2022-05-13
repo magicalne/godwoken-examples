@@ -26,8 +26,8 @@ jobs:
         yarn run batch-deposit \
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
-          --capacity 500100000000 \
-          --n-derived-accounts 100
+          --capacity 5001000000000 \
+          --n-derived-accounts 1
 
   batch-withdraw:
     needs: [ batch-deposit ]
@@ -44,10 +44,11 @@ jobs:
         CKB_RPC_URL: "https://testnet.ckb.dev"
         CKB_INDEXER_URL: "https://testnet.ckb.dev/indexer"
       working-directory: packages/cli
+      # TODO: withdraw all balance
       run: |
         yarn run batch-withdraw \
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
-          --capacity 500000000000 \
+          --capacity 5000000000000 \
           --fee 100 \
-          --n-derived-accounts 100
+          --n-derived-accounts 1

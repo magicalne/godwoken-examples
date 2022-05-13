@@ -361,20 +361,26 @@ program
       )
     );
     const batchSize: number = +program.batchSize || 10;
+    const cellDeps = buildDepositCellDeps(sudtScript != null);
     for (let start = 0; start < allOutputs.length; start += batchSize) {
-      const ethUsers = allEthUsers.slice(start, start + batchSize);
+      // const ethUsers = allEthUsers.slice(start, start + batchSize);
       const outputs = allOutputs.slice(start, start + batchSize);
-      const cellDeps = buildDepositCellDeps(sudtScript != null);
-      const initBalances = await Promise.all(
-        ethUsers.map(
-          async (ethUser) => await godwokenWeb3.getBalance(ethUser.ethAddress())
-        )
-      );
+      // const initBalances = await Promise.all(
+      //   ethUsers.map(
+      //     async (ethUser) => await godwokenWeb3.getBalance(ethUser.ethAddress())
+      //   )
+      // );
       const _txHash = await tryDeposit(ckbUser, outputs, cellDeps, sudtScript);
-      for (let i = 0; i < ethUsers.length; i++) {
-        await waitL2Deposit(ethUsers[i].ethAddress(), initBalances[i]);
-      }
-      console.info("Successfully batch-deposit accumulated ${} accounts", start+batchSize);
+      // for (let i = 0; i < ethUsers.length; i++) {
+      //   await waitL2Deposit(ethUsers[i].ethAddress(), initBalances[i]);
+      // }
+    }
+    for (let i = 0; i < allOutputs.length; i += 1) {
+      const initBalance = await godwokenWeb3.getBalance(
+        allEthUsers[i].ethAddress()
+      );
+      await waitL2Deposit(allEthUsers[i].ethAddress(), initBalance);
+      console.info(`Successfully batch-deposit accumulated ${i + 1} accounts`);
     }
   });
 
@@ -437,7 +443,7 @@ program
       hashes.push(hash);
     }
     for (const hash of hashes) {
-      await waitL2Withdrawal(hash, 10 * 60 * 1000);
+      await waitL2Withdrawal(hash, 10 * 2000 * 1000);
     }
   });
 
