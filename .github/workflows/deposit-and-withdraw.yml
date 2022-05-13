@@ -39,7 +39,6 @@ jobs:
         yarn run withdraw \
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
-          --capacity 500000000000 \
           --fee 100
 
   get-balance:

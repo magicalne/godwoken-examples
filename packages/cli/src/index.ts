@@ -409,6 +409,7 @@ program
       );
       txs.push(tx);
       skip += tx.inputs.length;
+      console.info(`Collected ${tx.inputs.length} inputs, ${sumCkbCapacity(outputs)} total output capacity`);
     }
 
     console.info("### Collect accounts' init balances");
