@@ -27,10 +27,11 @@ jobs:
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
           --capacity 500100000000 \
-          --n-derived-accounts 1000
+          --n-derived-accounts 100
 
   batch-withdraw:
     needs: [ batch-deposit ]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -49,4 +50,4 @@ jobs:
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
           --capacity 500000000000 \
           --fee 100 \
-          --n-derived-accounts 1000
+          --n-derived-accounts 100

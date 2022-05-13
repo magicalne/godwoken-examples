@@ -374,6 +374,7 @@ program
       for (let i = 0; i < ethUsers.length; i++) {
         await waitL2Deposit(ethUsers[i].ethAddress(), initBalances[i]);
       }
+      console.info("Successfully batch-deposit accumulated ${} accounts", start+batchSize);
     }
   });
 
