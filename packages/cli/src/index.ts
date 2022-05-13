@@ -409,7 +409,11 @@ program
       );
       txs.push(tx);
       skip += tx.inputs.length;
-      console.info(`Collected ${tx.inputs.length} inputs, ${sumCkbCapacity(outputs)} total output capacity`);
+      console.info(
+        `Collected ${tx.inputs.length} inputs, ${sumCkbCapacity(
+          outputs
+        )} total output capacity`
+      );
     }
 
     console.info("### Collect accounts' init balances");
@@ -541,10 +545,6 @@ program
 program
   .command("faucet")
   .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
-  .option(
-    "--n-derived-accounts <NUMBER>",
-    "the number of accounts to derived by the provided private key, default is 1000"
-  )
   .action(async (program: Command) => {
     lumosConfigManager.initializeConfig(lumosConfigManager.predefined.AGGRON4);
 
@@ -557,9 +557,11 @@ program
 
     const browser = await puppeteer.launch({ headless: true });
     const admin = new CkbUser(program.privateKey);
-    const nDerivedAccounts =
-      program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
-    const ckbUsers = newDerivedCkbUsers(program.privateKey, nDerivedAccounts);
+    const nDerivedAccounts = 10;
+    const ckbUsers = newDerivedCkbUsers(
+      (Date.now()).toString(),
+      nDerivedAccounts
+    );
     console.log(
       "CkbAddresses:",
       JSON.stringify(
@@ -572,19 +574,21 @@ program
       const _claimed = await faucet(browser, ckbUser);
     }
 
-    console.log("Try to transfer all capacities to --private-key");
     const ckbTipNumber = BigInt(await ckbRpc.get_tip_block_number());
-    console.log("Current CKB tip number is", ckbTipNumber);
+    console.log("Wait chain grow, current CKB tip number is", ckbTipNumber);
     while (true) {
-      asyncSleep(1000);
+      await asyncSleep(1000);
       if (
         BigInt(await ckbRpc.get_tip_block_number()) >=
-        ckbTipNumber + BigInt(10)
+        ckbTipNumber + BigInt(5)
       ) {
         break;
       }
     }
 
+    console.log(
+      `Try to transfer all ${ckbUsers.length} accounts' capacities to --private-key`
+    );
     for (const ckbUser of ckbUsers) {
       const collector = ckbIndexer.collector({
         lock: ckbUser.l1LockScript(),
@@ -608,8 +612,13 @@ program
           [output],
           [config.getCellDep("SECP256K1_BLAKE160")]
         );
-        const hash = await ckbRpc.send_transaction(tx, "passthrough");
-        hashes.push(hash);
+        try {
+          const hash = await ckbRpc.send_transaction(tx, "passthrough");
+          console.info(`faucet send transaction ${hash}`);
+          hashes.push(hash);
+        } catch (err) {
+          console.error(`faucet send transaction, error: ${err}`);
+        }
       }
       for (const hash of hashes) {
         await waitL1TxCommitted(hash);
