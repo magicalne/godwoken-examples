@@ -1,12 +1,12 @@
 name: Batch
 
 on:
-  push:
-    branches:
-      - main
   schedule:
   - cron: '50 12 * * *'
   workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'batch size, default is 11'
 
 jobs:
   batch-deposit:
@@ -27,7 +27,7 @@ jobs:
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
           --capacity 5001000000000 \
-          --n-derived-accounts 11
+          --n-derived-accounts ${{ inputs.batch_size || 11 }}
 
   batch-withdraw:
     needs: [ batch-deposit ]
@@ -49,4 +49,4 @@ jobs:
           --lumos-config BETANET \
           --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
           --fee 100 \
-          --n-derived-accounts 11
+          --n-derived-accounts ${{ inputs.batch_size || 11 }}

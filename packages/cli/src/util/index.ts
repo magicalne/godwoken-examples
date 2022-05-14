@@ -115,9 +115,9 @@ export async function waitL2Withdrawal(
       console.log(
         `[waitL2Withdrawal] web3.gw_get_withdrawal("${withdrawalHash}") ==> ${lastStatus.status}`
       );
-      if (withdrawalStatus.status === "committed") {
-        break;
-      }
+    }
+    if (lastStatus.status === "committed") {
+      break;
     }
     if (new Date().getTime() - startTime > timeoutMs) {
       throw new Error(
