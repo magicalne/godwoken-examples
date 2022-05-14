@@ -110,14 +110,25 @@ export class GodwokenWeb3Rpc {
   }
 
   private async call_(method: string, ...args: any[]): Promise<any> {
+    return await this.retryCall_(0, method, ...args);
+  }
+
+  private async retryCall_(
+    retries: number,
+    method: string,
+    ...args: any[]
+  ): Promise<any> {
     try {
-      const result = await this.rpc__[method](...args);
-      return result;
+      return await this.rpc__[method](...args);
     } catch (err: any) {
-      console.error(
-        `Call to GodwokenWeb3 ${method}(${args}), error: ${err.message}`
-      );
-      throw err;
+      if (retries === 20) {
+        throw err;
+      } else {
+        console.error(
+          `Call to GodwokenWeb3 ${method}(${args}), error: ${err.message}`
+        );
+        return await this.retryCall_(retries + 1, method, ...args);
+      }
     }
   }
 }

@@ -559,7 +559,7 @@ program
     const admin = new CkbUser(program.privateKey);
     const nDerivedAccounts = 10;
     const ckbUsers = newDerivedCkbUsers(
-      (Date.now()).toString(),
+      Date.now().toString(),
       nDerivedAccounts
     );
     console.log(
@@ -579,7 +579,7 @@ program
     while (true) {
       await asyncSleep(1000);
       if (
-        BigInt(await ckbRpc.get_tip_block_number()) >=
+        BigInt(await ckbRpc.get_tip_block_number().catch(_ => { return ckbTipNumber})) >=
         ckbTipNumber + BigInt(5)
       ) {
         break;
