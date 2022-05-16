@@ -412,7 +412,9 @@ program
       console.info(
         `Collected ${tx.inputs.length} inputs, ${sumCkbCapacity(
           outputs
-        )} total output capacity`
+        )} total output capacity, already ${start + batchSize}/${
+          allOutputs.length
+        } outputs`
       );
     }
 
@@ -579,7 +581,11 @@ program
     while (true) {
       await asyncSleep(1000);
       if (
-        BigInt(await ckbRpc.get_tip_block_number().catch(_ => { return ckbTipNumber})) >=
+        BigInt(
+          await ckbRpc.get_tip_block_number().catch((_) => {
+            return ckbTipNumber;
+          })
+        ) >=
         ckbTipNumber + BigInt(5)
       ) {
         break;
