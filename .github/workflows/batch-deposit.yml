@@ -1,0 +1,35 @@
+name: Batch Deposit
+
+on:
+  schedule:
+  - cron: '50 12 * * *'
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: 'for-loop rounds, default is 100'
+
+env:
+  ROLLUP_SCRIPT_ARGS: "0x86c7429247beba7ddd6e4361bcdfc0510b0b644131e2afb7e486375249a01802"
+  GODWOKEN_WEB3_URL: "https://godwoken-betanet-v1.ckbapp.dev"
+  CKB_RPC_URL: "https://testnet.ckb.dev"
+  CKB_INDEXER_URL: "https://testnet.ckb.dev/indexer"
+
+jobs:
+  batch-deposit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: yarn install
+      run: yarn && cd packages/cli && yarn
+    - name: yarn run batch-deposit
+      working-directory: packages/cli
+      run: |
+        rounds=${{ github.event.inputs.rounds || 100 }}
+        echo "rounds = $rounds"
+        for _ in $(seq 1 $rounds); do
+          yarn run batch-deposit \
+            --lumos-config BETANET \
+            --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
+            --capacity 50100000000 \
+            --n-derived-accounts 1000;
+        done
