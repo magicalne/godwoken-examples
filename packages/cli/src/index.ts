@@ -129,6 +129,26 @@ async function buildDepositL1Transaction(
   );
 }
 
+async function sendL1Transaction(
+  tx: Transaction,
+  retries: number = 0
+): Promise<Hash> {
+  try {
+    return await ckbRpc.send_transaction(tx, "passthrough");
+  } catch (err) {
+    console.info(
+      `[DEBUG] [sendL1Transaction] error: ${err}`
+    );
+    if (retries === 30) {
+      console.error(`[sendL1Transaction] throw error ${err}`);
+      throw err;
+    }
+
+    await asyncSleep(3000);
+    return await sendL1Transaction(tx, retries + 1);
+  }
+}
+
 async function sendL1TransactionAndWaitConfirmation(
   tx: Transaction,
   retries: number = 0
@@ -142,7 +162,7 @@ async function sendL1TransactionAndWaitConfirmation(
       `[DEBUG] [sendL1TransactionAndWaitConfirmation] error: ${err}`
     );
     if (retries === 300) {
-      console.error(`[waitL1TxCommitted] throw error ${err}`);
+      console.error(`[sendL1TransactionAndWaitConfirmation] throw error ${err}`);
       throw err;
     }
 
@@ -281,7 +301,8 @@ program
       sudtScript,
       0
     );
-    const _txHash = await sendL1TransactionAndWaitConfirmation(tx);
+    const txHash = await sendL1Transaction(tx);
+    await waitL1TxCommitted(txHash);
     await waitL2Deposit(ethUser.ethAddress());
   });
 
@@ -428,12 +449,19 @@ program
     }
 
     console.info("### Send layer1 transactions");
+    let hashes = [];
     for (let i = 0; i < txs.length; i++) {
       const tx = txs[i];
-      const txHash = await sendL1TransactionAndWaitConfirmation(tx);
+      const txHash = await sendL1Transaction(tx);
+      hashes.push(txHash);
       console.info(
         `Sent ${i + 1}/${txs.length} layer-1 transaction, hash: ${txHash}`
       );
+    }
+
+    console.info("### Wait layer1 transactions confirmation");
+    for (const txHash of hashes) {
+        await waitL1TxCommitted(txHash);
     }
 
     console.info("### Wait layer2 deposit successfully");
