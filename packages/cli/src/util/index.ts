@@ -66,7 +66,7 @@ export async function waitL1TxCommitted(
 export async function waitL2Deposit(
   ethAddress: EthAddress,
   initBalance_?: bigint,
-  timeoutMs: number = 1000 * 120
+  timeoutMs: number = 1000 * 6000
 ): Promise<void> {
   const startTime = new Date().getTime();
   const initBalance =
