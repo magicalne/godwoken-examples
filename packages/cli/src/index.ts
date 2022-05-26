@@ -32,6 +32,7 @@ import { HexString } from "@ckb-lumos/base";
 import keccak256 from "keccak256";
 import { faucet } from "./functional/faucet";
 import { collectFinalizedWithdrawals } from "./functional/unlock";
+import { readFileSync } from "fs";
 import { TransactionSkeletonType } from "@ckb-lumos/helpers";
 
 function getCapacity(ckbCapacity: string): bigint {
@@ -98,6 +99,18 @@ function newDerivedEthUsers(
     );
 }
 
+function convertCkbAddrs(pkPath: string): CkbUser[] {
+  const pks = JSON.parse(readFileSync(pkPath, "utf8"));
+  return pks.map((pk: { pk: string }) => newCkbUser(pk.pk));
+}
+function convertEthAddrs(pkPath: string): EthUser[] {
+  const pks = JSON.parse(readFileSync(pkPath, "utf8"));
+  return pks.map(
+    (pk: any) =>
+      new EthUser(EthUser.privateKeyToEthAddress(pk.pk), pk)
+  );
+}
+
 async function buildDepositL1Transaction(
   ckbUser: CkbUser,
   outputs: Cell[],
@@ -136,9 +149,7 @@ async function sendL1Transaction(
   try {
     return await ckbRpc.send_transaction(tx, "passthrough");
   } catch (err) {
-    console.info(
-      `[DEBUG] [sendL1Transaction] error: ${err}`
-    );
+    console.info(`[DEBUG] [sendL1Transaction] error: ${err}`);
     if (retries === 30) {
       console.error(`[sendL1Transaction] throw error ${err}`);
       throw err;
@@ -162,7 +173,9 @@ async function sendL1TransactionAndWaitConfirmation(
       `[DEBUG] [sendL1TransactionAndWaitConfirmation] error: ${err}`
     );
     if (retries === 300) {
-      console.error(`[sendL1TransactionAndWaitConfirmation] throw error ${err}`);
+      console.error(
+        `[sendL1TransactionAndWaitConfirmation] throw error ${err}`
+      );
       throw err;
     }
 
@@ -358,7 +371,8 @@ program
 
 program
   .command("batch-deposit")
-  .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
+  // .requiredOption("-p, --private-key <PRIVATEKEY>", "private key")
+  .requiredOption("-pk --pk-path <PRIVATEKEY_PATH>", "path to private keys")
   .requiredOption(
     "-c --capacity <CAPACITY>",
     `depositing CKB capacity in shannons`
@@ -389,13 +403,11 @@ program
         : getSudtScript(program.sudtScriptArgs!);
     const nDerivedAccounts =
       program.nDerivedAccounts == null ? 100 : Number(program.nDerivedAccounts);
-    const ckbUser = newCkbUser(program.privateKey);
-    const allEthUsers = newDerivedEthUsers(
-      program.privateKey,
-      nDerivedAccounts
-    );
-    console.log(`CkbAddress: "${ckbUser.ckbAddress()}"`);
-    console.log(`CkbLockArgs: "${ckbUser.ckbSecpLockArgs()}"`);
+    // const ckbUser = newCkbUser(program.privateKey);
+    const allEthUsers = convertEthAddrs(program.pkPath);
+    const allCkbUsers = convertCkbAddrs(program.pkPath);
+    // console.log(`CkbAddress: "${ckbUser.ckbAddress()}"`);
+    // console.log(`CkbLockArgs: "${ckbUser.ckbSecpLockArgs()}"`);
     console.log(
       `EthAddresses: ${JSON.stringify(
         allEthUsers.map((ethUser) => ethUser.ethAddress()),
@@ -404,11 +416,11 @@ program
       )}`
     );
 
-    const batchSize: number = program.batchSize ? +program.batchSize : 10;
+    const batchSize: number = program.batchSize ? +program.batchSize : 1;
     const cellDeps = buildDepositCellDeps(sudtScript != null);
-    const allOutputs = allEthUsers.map((ethUser) =>
+    const allOutputs = allEthUsers.map((ethUser, i) =>
       buildDepositOutputCell(
-        ckbUser,
+        allCkbUsers[i],
         ethUser,
         ckbCapacity,
         sudtAmount,
@@ -422,7 +434,7 @@ program
     for (let start = 0; start < allOutputs.length; start += batchSize) {
       const outputs = allOutputs.slice(start, start + batchSize);
       const tx = await buildDepositL1Transaction(
-        ckbUser,
+        allCkbUsers[start],
         outputs,
         cellDeps,
         sudtScript,
@@ -461,7 +473,7 @@ program
 
     console.info("### Wait layer1 transactions confirmation");
     for (const txHash of hashes) {
-        await waitL1TxCommitted(txHash);
+      await waitL1TxCommitted(txHash);
     }
 
     console.info("### Wait layer2 deposit successfully");

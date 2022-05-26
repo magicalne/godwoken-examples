@@ -1,12 +1,7 @@
 name: Batch Deposit
 
 on:
-  schedule:
-  - cron: '50 12 * * *'
   workflow_dispatch:
-    inputs:
-      rounds:
-        description: 'for-loop rounds, default is 1'
 
 env:
   ROLLUP_SCRIPT_ARGS: "0x86c7429247beba7ddd6e4361bcdfc0510b0b644131e2afb7e486375249a01802"
@@ -24,12 +19,8 @@ jobs:
     - name: yarn run batch-deposit
       working-directory: packages/cli
       run: |
-        rounds=${{ github.event.inputs.rounds || 1 }}
-        echo "rounds = $rounds"
-        for _ in $(seq 1 $rounds); do
-          yarn run batch-deposit \
-            --lumos-config BETANET \
-            --private-key ${{ secrets.GODWOKEN_BENCHMARK_PRIVKEY }} \
-            --capacity 50100000000 \
-            --n-derived-accounts 1000;
-        done
+        yarn run batch-deposit \
+          --lumos-config BETANET \
+          -pk ../../.github/workflows/pks.json \
+          --capacity 50100000000 \
+          --n-derived-accounts 1000;
