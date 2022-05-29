@@ -25,6 +25,7 @@ export interface DepositLockArgs {
   owner_lock_hash: Hash;
   layer2_lock: Script;
   cancel_timeout: PackedSince;
+  registry_id: PackedSince;
 }
 
 export function serializeArgs(args: DepositLockArgs): HexString {
@@ -61,6 +62,7 @@ export function getDepositLockArgs(
     owner_lock_hash: ownerLockHash,
     layer2_lock: layer2_lock,
     cancel_timeout: cancelTimeout, // relative timestamp, 2 days
+    registry_id: "0x2",
   };
   return depositLockArgs;
 }

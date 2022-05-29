@@ -6,8 +6,11 @@ import {
   Script,
 } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
-import { L2Transaction,
-  WithdrawalRequest, WithdrawalRequestExtra, WithdrawalRequestV1
+import {
+  L2Transaction,
+  WithdrawalRequest,
+  WithdrawalRequestExtra,
+  WithdrawalRequestV1,
 } from "./types";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
@@ -108,6 +111,7 @@ export function NormalizeDepositLockArgs(
     owner_lock_hash: normalizeRawData(32),
     layer2_lock: toNormalize(normalizers.NormalizeScript),
     cancel_timeout: normalizeHexNumber(8),
+    registry_id: normalizeHexNumber(4),
   });
 }
 
