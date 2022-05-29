@@ -21,7 +21,7 @@ import { CkbIndexer } from "../account/indexer-remote";
 import { logger } from "../modules/logger";
 import { readFileSync } from "fs";
 
-const MINIMUM_DEPOSIT_CAPACITY = "30000000000"; // shannons
+const MINIMUM_DEPOSIT_CAPACITY = "60000000000"; // shannons
 
 async function deposit(privKey: string, ckbIndexer: CkbIndexer) {
   const ckbAddress = privateKeyToCkbAddress(privKey);
